@@ -941,7 +941,8 @@ async function logAct(texto, frente, tarea) {
 }
 function failed(e) {
   if (e && e.code === "auth") { salirEdicion(); toast("La llave de edición ya no es válida. Pide a Juan Carlos que la renueve."); return; }
-  toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
+  toast(`No se pudo guardar${e && e.code ? " (" + e.code + ")" : ""}. Tu texto sigue ahí; inténtalo otra vez en unos segundos.`);
+  try { console.error("Tablero: error al guardar", e); } catch {}
 }
 async function saveTask(t, patch) {
   if (patch.estado === "hecha" && t.estado !== "hecha") patch.hecha_at = nowISO();
@@ -1121,7 +1122,8 @@ async function flush() {
   const msg = `${editor ? editor.nombre : "Tablero"}: ${textos.length ? textos.join(" · ").slice(0, 300) : "cambios en el tablero"}`;
   try {
     let ok = false;
-    for (let intento = 0; intento < 4 && !ok; intento++) {
+    for (let intento = 0; intento < 6 && !ok; intento++) {
+      if (intento) await new Promise((r) => setTimeout(r, 800 * intento + Math.random() * 600));
       const { raw, sha } = await fetchAuth();
       ops.forEach((o) => applyOp(raw, o));
       const acts = Object.entries(raw.actividad || {}).sort((a, b) => (b[1].at || "").localeCompare(a[1].at || ""));

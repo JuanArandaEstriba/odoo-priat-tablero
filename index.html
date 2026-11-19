@@ -1175,7 +1175,7 @@ function abrirEditar() {
     const pass = $("#edPass").value; if (!pass) { err.textContent = "Escribe la contraseña."; return; }
     $("#edOk").disabled = true; err.textContent = "";
     try {
-      const ll = await descifrarLlave(pass); const tk = ll.tk;
+      const ll = await descifrarLlave(pass); const tk = ll.tk; if (!tk) throw { code: "sin_token" };
       if (!DK) await setDK(ll.dk, false);
       const r = await fetch(API, { headers: { Authorization: `Bearer ${tk}`, Accept: "application/vnd.github+json" } });
       if (!r.ok) throw { code: "auth" };
@@ -1183,7 +1183,7 @@ function abrirEditar() {
       try { sessionStorage.setItem("tk-odoo", tk); localStorage.setItem("editor-odoo", sel); } catch {}
       closeDrawer(); renderQuien(); toast(`Editando como ${editor.nombre}`); await cargar(); render();
     } catch (e) {
-      err.textContent = e.code === "pass" ? "Contraseña incorrecta." : e.code === "sin_llave" ? "Todavía no se configura la llave de edición." : "La llave de edición no funciona. Hay que renovarla.";
+      err.textContent = e.code === "pass" ? "Contraseña incorrecta." : e.code === "sin_token" ? "Falta conectar la llave de GitHub (configurar.html → Cambiar llave o contraseñas)." : e.code === "sin_llave" ? "Todavía no se configura la llave de edición." : "La llave de edición no funciona. Hay que renovarla.";
       $("#edOk").disabled = false;
     }
   };

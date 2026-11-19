@@ -131,7 +131,7 @@ $("fRen").onsubmit = async (e) => {
   try {
     const r = await fetch(`llave.json?t=${Date.now()}`, { cache: "no-store" }); if (!r.ok) throw new Error("Todavía no hay llave. Usa Primera vez.");
     const viejo = JSON.parse(new TextDecoder().decode(await unwrap(await r.json(), e0)));
-    const tk = ntk || viejo.tk; const dk = u8(viejo.dk);
+    const tk = ntk || viejo.tk; const dk = u8(viejo.dk); if (!tk) throw new Error("Pega el token de GitHub.");
     await checkToken(tk);
     const llave = await wrap(new TextEncoder().encode(JSON.stringify({ tk, dk: viejo.dk })), e1 || e0);
     await put(tk, "llave.json", llave, "Llave de edición renovada (cifrada)");

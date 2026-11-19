@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Odoo PRIAT · Implementación</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+html { -webkit-text-size-adjust: 100%; } body { margin: 0; } [hidden] { display: none !important; } img { max-width: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* Layout: barra superior con fases y pestañas; cada vista es una mesa de trabajo de ancho completo, resumen arriba y detalle abajo. */
+/* Paleta propia del proyecto: grafito frío + azul tinta como acento; estados en verde, ámbar y rojo. */
+:root {
+  --bg: #f3f4f6; --panel: #ffffff; --panel-2: #f6f7f9; --line: #e2e5ea; --line-2: #cfd4dc;
+  --fg: #141821; --muted: #5b6372; --faint: #8c93a1;
+  --accent: #2446a6; --accent-2: #3a5cc0; --accent-soft: #e8edfa; --on-accent: #ffffff;
+  --verde: #1d7f52; --verde-soft: #e1f2e9; --ambar: #9a6408; --ambar-soft: #fbf0d9; --rojo: #c2362b; --rojo-soft: #fbe7e4;
+  --azul: #2446a6; --azul-soft: #e8edfa; --logo: #141821;
+  --f1: #2446a6; --f2: #0f8a7e; --f3: #5b3fb8; --f4: #c2602a; --f5: #6b7a1e; --f6: #b4307a; --f7: #1b7fb5; --f8: #8a5a12; --f9: #3c4d63; --f10: #a83a3a;
+  --sombra: 0 1px 2px rgba(15,20,30,.05), 0 10px 30px rgba(15,20,30,.08);
+  --f-display: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+  --f-ui: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1116; --panel: #161a21; --panel-2: #1d222b; --line: #272d37; --line-2: #343b47;
+  --fg: #e8ebf0; --muted: #9ea6b4; --faint: #6f7786;
+  --accent: #8ea8ff; --accent-2: #a9bcff; --accent-soft: #1b2440; --on-accent: #0b1020;
+  --verde: #5ccb92; --verde-soft: #13291f; --ambar: #e6ad4f; --ambar-soft: #33280f; --rojo: #f07d72; --rojo-soft: #35191a;
+  --azul: #8ea8ff; --azul-soft: #1b2440; --logo: #e8ebf0;
+  --f1: #8ea8ff; --f2: #4fd1c1; --f3: #b39cff; --f4: #f0995f; --f5: #b8c75a; --f6: #f07fbd; --f7: #6cc0ef; --f8: #d9a85b; --f9: #9fb0c8; --f10: #f08a8a;
+  --sombra: 0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.45); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1116; --panel: #161a21; --panel-2: #1d222b; --line: #272d37; --line-2: #343b47;
+  --fg: #e8ebf0; --muted: #9ea6b4; --faint: #6f7786;
+  --accent: #8ea8ff; --accent-2: #a9bcff; --accent-soft: #1b2440; --on-accent: #0b1020;
+  --verde: #5ccb92; --verde-soft: #13291f; --ambar: #e6ad4f; --ambar-soft: #33280f; --rojo: #f07d72; --rojo-soft: #35191a;
+  --azul: #8ea8ff; --azul-soft: #1b2440; --logo: #e8ebf0;
+  --f1: #8ea8ff; --f2: #4fd1c1; --f3: #b39cff; --f4: #f0995f; --f5: #b8c75a; --f6: #f07fbd; --f7: #6cc0ef; --f8: #d9a85b; --f9: #9fb0c8; --f10: #f08a8a;
+  --sombra: 0 1px 2px rgba(0,0,0,.35), 0 10px 30px rgba(0,0,0,.45); color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-ui); font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--panel); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* Barra superior */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--panel); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 20px; padding-block: 12px 0; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand .logo { height: 26px; width: auto; color: var(--logo); flex: none; overflow: hidden; }
+.brand .sep { width: 1px; height: 30px; background: var(--line-2); }
+.brand .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-family: var(--f-display); font-weight: 650; font-size: 15px; flex: none; }
+.brand h1 { margin: 0; font-family: var(--f-display); font-weight: 650; font-size: 17px; letter-spacing: -.01em; white-space: nowrap; }
+.brand small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; font-family: var(--f-ui); }
+.fases { display: flex; align-items: stretch; flex: 1 1 420px; min-width: 0; gap: 3px; }
+.fase { flex: 1; min-width: 0; padding: 6px 10px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.fase b { display: block; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fase span { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.fase .fill { position: absolute; inset: auto 0 0 0; height: 3px; background: var(--line-2); }
+.fase .fill i { display: block; height: 100%; background: var(--accent); }
+.fase.now { border-color: var(--accent); background: var(--accent-soft); }
+.quien { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-left: auto; }
+.tema { border: 1px solid var(--line); background: var(--panel-2); border-radius: 8px; width: 30px; height: 28px; font-size: 14px; color: var(--muted); }
+.tema:hover { color: var(--fg); }
+.quien .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+.quien .dot.on { background: var(--verde); }
+.tabs { display: flex; gap: 2px; width: 100%; overflow-x: auto; scrollbar-width: none; margin-top: 4px; }
+.tabs a { padding: 10px 14px; color: var(--muted); text-decoration: none; font-weight: 500; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tabs a:hover { color: var(--fg); }
+.tabs a.on { color: var(--fg); border-bottom-color: var(--accent); }
+.tabs a .n { font-family: var(--f-mono); font-size: 11px; color: var(--faint); margin-left: 4px; }
+
+main { padding-block: 22px 60px; }
+.view { display: grid; gap: 22px; }
+h2 { font-family: var(--f-display); font-weight: 650; font-size: 19px; letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+h3 { font-size: 13px; font-weight: 600; margin: 0; letter-spacing: .02em; }
+.eyebrow { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.sec-h p { margin: 0; color: var(--muted); font-size: 13px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.pad { padding: 16px; }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.empty { padding: 28px 16px; text-align: center; color: var(--muted); }
+
+/* Pastillas de estado */
+.pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; border: 0; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.s-pendiente { background: var(--panel-2); color: var(--muted); }
+.s-en_curso { background: var(--azul-soft); color: var(--azul); }
+.s-atorada { background: var(--rojo-soft); color: var(--rojo); }
+.s-hecha { background: var(--verde-soft); color: var(--verde); }
+.sem-verde { background: var(--verde-soft); color: var(--verde); }
+.sem-ambar { background: var(--ambar-soft); color: var(--ambar); }
+.sem-rojo { background: var(--rojo-soft); color: var(--rojo); }
+
+/* Resumen: cabecera */
+.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.hero .lead { padding: 20px; display: grid; gap: 14px; align-content: start; }
+.hero .lead h2 { font-size: 24px; line-height: 1.15; }
+.hero .lead p { margin: 0; color: var(--muted); max-width: 60ch; }
+.gauge { display: flex; align-items: center; gap: 16px; }
+.gauge svg { flex: none; }
+.gauge .big { font-family: var(--f-display); font-size: 34px; font-weight: 650; line-height: 1; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+.stat { background: var(--panel); padding: 16px; display: grid; gap: 4px; align-content: start; }
+.stat b { font-family: var(--f-display); font-size: 30px; font-weight: 650; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 12.5px; }
+.stat.alerta b { color: var(--rojo); }
+
+/* Indicadores */
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.kpi { padding: 14px 14px 12px; display: grid; gap: 6px; position: relative; }
+.kpi .v { font-family: var(--f-mono); font-size: 26px; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; }
+.kpi .v small { font-size: 12px; color: var(--muted); font-family: var(--f-ui); letter-spacing: 0; margin-left: 4px; }
+.kpi .n { font-size: 13px; font-weight: 500; padding-right: 22px; }
+.kpi .src { font-size: 11.5px; color: var(--faint); display: flex; justify-content: space-between; gap: 8px; }
+.kpi .bar { height: 4px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+.kpi .bar i { display: block; height: 100%; border-radius: 4px; }
+.kpi button.edit { position: absolute; top: 10px; right: 10px; border: 0; background: none; color: var(--faint); font-size: 12px; padding: 2px 6px; border-radius: 6px; }
+.kpi button.edit:hover { background: var(--panel-2); color: var(--fg); }
+.kpi .delta { font-family: var(--f-mono); font-size: 11.5px; }
+
+/* Frentes */
+.frentes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.frente { padding: 14px; display: grid; gap: 10px; text-align: left; border: 1px solid var(--line); background: var(--panel); border-radius: 14px; transition: border-color .15s, box-shadow .15s; }
+.frente:hover { border-color: var(--line-2); box-shadow: var(--sombra); }
+.frente .t { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+.frente h3 { font-family: var(--f-display); font-size: 16px; font-weight: 650; letter-spacing: -.005em; }
+.frente .who { font-size: 12px; color: var(--muted); }
+.prog { display: flex; align-items: center; gap: 10px; }
+.prog .track { flex: 1; height: 6px; background: var(--panel-2); border-radius: 6px; overflow: hidden; display: flex; }
+.prog .track i { display: block; height: 100%; }
+.prog b { font-family: var(--f-mono); font-size: 12px; font-weight: 500; min-width: 38px; text-align: right; }
+.frente .next { font-size: 12.5px; display: grid; gap: 2px; }
+.frente .next span { color: var(--muted); }
+.frente .why { font-size: 12.5px; color: var(--muted); border-left: 2px solid var(--line-2); padding-left: 8px; }
+.frente .why.rojo { border-color: var(--rojo); }
+.frente .why.ambar { border-color: var(--ambar); }
+.frente .counts { display: flex; gap: 12px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.frente .counts b { font-family: var(--f-mono); font-weight: 500; color: var(--fg); }
+
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.list { display: grid; }
+.li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 14px; border-top: 1px solid var(--line); text-align: left; background: none; border-left: 0; border-right: 0; border-bottom: 0; width: 100%; }
+.li:first-child { border-top: 0; }
+button.li:hover { background: var(--panel-2); }
+.li .tx { min-width: 0; }
+.li .tx b { font-weight: 500; display: block; }
+.li .tx span { font-size: 12px; color: var(--muted); }
+.li .dt { font-family: var(--f-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.li .dt.late { color: var(--rojo); }
+.chip-f { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 1px 7px; border-radius: 6px; background: var(--panel-2); color: var(--muted); font-weight: 500; white-space: nowrap; border: 1px solid var(--line); }
+.fdot { display: inline-block; width: 8px; height: 8px; border-radius: 3px; margin-right: 7px; vertical-align: 1px; flex: none; }
+.chip-f .fdot { margin-right: 0; }
+.dot-s { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: none; }
+
+.feed .li { grid-template-columns: 34px minmax(0, 1fr); }
+.av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: var(--on-accent); background: var(--accent-2); }
+
+/* Plan (Gantt) */
+.gantt { overflow-x: auto; }
+.g { display: grid; min-width: 980px; }
+.g .row { display: grid; grid-template-columns: 250px 1fr; border-top: 1px solid var(--line); min-height: 34px; }
+.g .row.head { position: sticky; top: 0; border-top: 0; background: var(--panel); z-index: 1; }
+.g .lbl { padding: 7px 14px; font-size: 13px; display: flex; align-items: center; gap: 8px; min-width: 0; border-right: 1px solid var(--line); }
+.g .lbl span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g .grp .lbl { font-family: var(--f-display); font-weight: 650; font-size: 14px; background: var(--panel-2); }
+.g .grp .lane { background: var(--panel-2); }
+.g .lane { position: relative; }
+.g .weeks { display: grid; height: 100%; }
+.g .weeks div { border-left: 1px solid var(--line); font-size: 10.5px; color: var(--faint); padding: 4px 4px; font-family: var(--f-mono); white-space: nowrap; overflow: hidden; }
+.g .weeks div.m { color: var(--muted); font-weight: 500; }
+.g .weeks div.hoy { background: var(--accent-soft); color: var(--accent); }
+.g .gl { position: absolute; inset: 0; display: grid; pointer-events: none; }
+.g .gl div { border-left: 1px solid var(--line); }
+.bar-e { position: absolute; top: 7px; height: 20px; border-radius: 6px; font-size: 11px; padding: 0 7px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; font-weight: 500; border: 1px solid transparent; }
+.bar-e.hecha { background: var(--verde-soft); color: var(--verde); }
+.bar-e.en_curso { background: var(--azul-soft); color: var(--azul); }
+.bar-e.pendiente { background: var(--panel-2); color: var(--muted); border-color: var(--line-2); }
+.bar-e.late { background: var(--rojo-soft); color: var(--rojo); }
+.bar-e.prop { border-style: dashed; border-color: currentColor; }
+.bar-e.clip { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.todayline { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); opacity: .7; pointer-events: none; z-index: 2; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); align-items: center; }
+.legend i { display: inline-block; width: 18px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+/* Tareas (tablero) */
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg button { border: 1px solid var(--line); background: var(--panel); padding: 5px 10px; border-radius: 999px; font-size: 12.5px; color: var(--muted); }
+.seg button.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.inp { border: 1px solid var(--line); background: var(--panel); border-radius: 9px; padding: 7px 10px; min-width: 0; }
+.inp:focus { border-color: var(--accent); outline: none; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 9px; padding: 7px 12px; font-weight: 500; }
+.btn:hover { border-color: var(--line-2); }
+.btn.pri { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn.pri:hover { background: var(--accent-2); }
+.btn.sm { padding: 4px 9px; font-size: 12.5px; }
+.add { display: grid; grid-template-columns: minmax(0, 1fr) 170px 140px 140px auto; gap: 8px; padding: 10px; }
+.kanban { display: grid; grid-template-columns: repeat(4, minmax(240px, 1fr)); gap: 12px; overflow-x: auto; align-items: start; }
+.col { background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 8px; display: grid; gap: 8px; min-height: 120px; align-content: start; }
+.col.drop { border-color: var(--accent); background: var(--accent-soft); }
+.col .ch { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; }
+.col .ch .mono { font-size: 12px; color: var(--muted); }
+.tk { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 7px; text-align: left; width: 100%; }
+.tk:hover { border-color: var(--line-2); box-shadow: var(--sombra); }
+.tk[draggable="true"] { cursor: grab; }
+.tk .tt { font-weight: 500; line-height: 1.35; }
+.tk .mt { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.tk .mt .dt.late { color: var(--rojo); font-weight: 500; }
+.tk .motivo { font-size: 12px; color: var(--rojo); background: var(--rojo-soft); padding: 5px 8px; border-radius: 7px; }
+.tk .chk { width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid var(--line-2); background: var(--panel); display: grid; place-items: center; flex: none; padding: 0; color: transparent; }
+.tk .chk.on { background: var(--verde); border-color: var(--verde); color: #fff; }
+.tk .top-r { display: flex; gap: 8px; align-items: start; }
+.more { width: 100%; border: 1px dashed var(--line-2); background: none; border-radius: 10px; padding: 7px; color: var(--muted); font-size: 12.5px; }
+
+/* Semanas */
+.wk { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 0; overflow: hidden; }
+.wk .side { padding: 18px; border-right: 1px solid var(--line); background: var(--panel-2); display: grid; gap: 10px; align-content: start; }
+.wk .side .num { font-family: var(--f-display); font-size: 28px; font-weight: 650; line-height: 1; }
+.wk .body { padding: 18px; display: grid; gap: 16px; min-width: 0; }
+.wk .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.wk ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.wk textarea { width: 100%; min-height: 70px; resize: vertical; }
+.bf { display: grid; gap: 6px; }
+.bf .row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; font-size: 13px; }
+.bf .row b { font-weight: 500; }
+.ministat { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.ministat b { font-family: var(--f-mono); color: var(--fg); font-weight: 500; }
+
+/* Procesos */
+.matriz { overflow-x: auto; }
+.matriz table { width: 100%; border-collapse: collapse; min-width: 760px; }
+.matriz th, .matriz td { padding: 10px 12px; border-top: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: middle; }
+.matriz th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); font-weight: 600; border-top: 0; }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; min-width: 260px; }
+.steps button { height: 26px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel-2); font-size: 11px; color: var(--faint); padding: 0 4px; }
+.steps button.on { background: var(--verde-soft); border-color: transparent; color: var(--verde); font-weight: 600; }
+.steps button.cur { background: var(--verde); color: #fff; }
+.steps button:disabled { cursor: default; }
+
+/* Decisiones */
+.dec .li { grid-template-columns: auto minmax(0, 1fr) auto; }
+
+/* Buzón */
+.buzon { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px; align-items: start; }
+.compose { padding: 16px; display: grid; gap: 10px; position: sticky; top: 120px; }
+.compose textarea { min-height: 150px; resize: vertical; width: 100%; line-height: 1.5; }
+.compose .acc { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.mic { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px; padding: 7px 14px; font-weight: 500; }
+.mic .rec { width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); }
+.mic.on { background: var(--rojo-soft); border-color: var(--rojo); color: var(--rojo); }
+.mic.on .rec { animation: pulso 1s ease-in-out infinite; }
+@keyframes pulso { 50% { opacity: .25; } }
+.parcial { font-size: 13px; color: var(--faint); font-style: italic; min-height: 1.2em; }
+.nota { padding: 14px 16px; display: grid; gap: 8px; border-top: 1px solid var(--line); }
+.nota:first-child { border-top: 0; }
+.nota .cab { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.nota .cuerpo { white-space: pre-wrap; line-height: 1.5; }
+.nota .resp { background: var(--accent-soft); border-radius: 10px; padding: 9px 12px; font-size: 13px; white-space: pre-wrap; }
+.nota .resp b { color: var(--accent); font-weight: 600; display: block; font-size: 12px; margin-bottom: 2px; }
+.s-nueva { background: var(--ambar-soft); color: var(--ambar); }
+.s-leida { background: var(--azul-soft); color: var(--azul); }
+.s-aplicada { background: var(--verde-soft); color: var(--verde); }
+@media (max-width: 900px) { .buzon { grid-template-columns: 1fr; } .compose { position: static; } }
+
+/* Identidad y edición */
+.yo { display: inline-flex; align-items: center; gap: 8px; color: var(--fg); font-weight: 500; }
+.ava { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: inline-grid; place-items: center; font-size: 11px; font-weight: 600; color: #fff; flex: none; }
+.ava.lg { width: 56px; height: 56px; font-size: 18px; }
+.quien-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.quien-pick button { border: 1.5px solid var(--line); background: var(--panel); border-radius: 14px; padding: 14px 8px; display: grid; justify-items: center; gap: 8px; font-weight: 500; }
+.quien-pick button.on { border-color: var(--accent); background: var(--accent-soft); }
+.err { color: var(--rojo); font-size: 13px; min-height: 1.2em; margin: 0; }
+.pie { padding-block: 0 40px; color: var(--faint); font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
+.pie a { color: var(--muted); }
+
+.candado { max-width: 420px; margin: 40px auto; padding: 28px; display: grid; gap: 12px; justify-items: center; text-align: center; }
+.candado svg { color: var(--accent); }
+.lock-f { display: grid; gap: 10px; width: 100%; }
+.rec-l { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; justify-content: center; }
+
+/* Panel lateral */
+.scrim { position: fixed; inset: 0; background: rgba(15,10,20,.35); z-index: 40; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100%); background: var(--panel); z-index: 41; box-shadow: var(--sombra); display: grid; grid-template-rows: auto 1fr auto; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
+.drawer header { padding: 16px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.drawer .bd { padding: 16px 18px; overflow-y: auto; display: grid; gap: 14px; align-content: start; }
+.drawer footer { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+.fld { display: grid; gap: 5px; }
+.fld label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.fld .inp { width: 100%; }
+.fld textarea.inp { min-height: 80px; resize: vertical; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.x { border: 0; background: none; font-size: 20px; color: var(--muted); width: 32px; height: 32px; border-radius: 8px; }
+.x:hover { background: var(--panel-2); }
+.hist { font-size: 12px; color: var(--muted); display: grid; gap: 4px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 10px; font-size: 13px; z-index: 60; box-shadow: var(--sombra); }
+.banner { padding: 10px 14px; border-radius: 10px; background: var(--ambar-soft); color: var(--ambar); font-size: 13px; }
+
+@media (max-width: 1000px) {
+  .hero { grid-template-columns: 1fr; }
+  .cols { grid-template-columns: 1fr; }
+  .add { grid-template-columns: 1fr 1fr; }
+  .add .inp:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fases { display: none; }
+  .wk { grid-template-columns: 1fr; }
+  .wk .side { border-right: 0; border-bottom: 1px solid var(--line); }
+  .wk .grid2 { grid-template-columns: 1fr; }
+  .bf .row { grid-template-columns: 1fr; gap: 2px; }
+  .kanban { grid-template-columns: repeat(4, minmax(78vw, 1fr)); }
+  .row2 { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <svg class="logo" role="img" aria-label="PRIAT Advisors" xmlns="http://www.w3.org/2000/svg" viewBox="252 224 290 74"> <g> <path fill="currentColor" d="m307.66,237.13c-1.57-2.86-4.01-5.26-7.32-7.21-3.32-1.95-7.62-2.94-12.92-2.94h-30.12v68.83h14.01v-66.63h9.84c2.36,0,4.63.72,6.79,2.15,2.16,1.43,3.95,3.38,5.34,5.86,1.39,2.47,2.09,5.32,2.09,8.53s-.7,6.08-2.09,8.63c-1.39,2.55-3.17,4.55-5.34,6.01-2.16,1.46-4.43,2.2-6.79,2.2h-7.94v1.98h14.21c5.3,0,9.6-.97,12.92-2.93,3.31-1.95,5.75-4.39,7.32-7.32,1.56-2.93,2.36-5.79,2.36-8.57s-.79-5.72-2.36-8.58Z"/> <path fill="currentColor" d="m372.25,276.88c.63,2.93,1.24,5.86,1.83,8.79.59,2.93,1.27,6.31,2.04,10.15h-14.33c-.7-3.21-1.27-5.96-1.73-8.26-.45-2.3-.89-4.46-1.31-6.49-1.05-4.95-2.76-8.91-5.13-11.87-2.37-2.96-5.23-4.51-8.58-4.65h-7.85v31.28h-14.02v-68.83h30.13c5.3,0,9.61.98,12.92,2.93,3.31,1.95,5.75,4.36,7.32,7.22,1.57,2.86,2.35,5.72,2.35,8.58,0,2.37-.56,4.81-1.67,7.32-1.12,2.51-2.88,4.74-5.28,6.69-2.41,1.95-5.49,3.35-9.26,4.18,3.42,1.12,6.24,2.95,8.47,5.49,2.23,2.55,3.59,5.04,4.08,7.48Zm-25.21-14.33c2.37,0,4.64-.73,6.8-2.2,2.16-1.47,3.94-3.47,5.33-6.01,1.39-2.54,2.09-5.42,2.09-8.63s-.7-6.05-2.09-8.53c-1.39-2.47-3.17-4.43-5.33-5.86-2.16-1.43-4.43-2.14-6.8-2.14l-9.83-.1v33.37l9.83.1Z"/> <path fill="currentColor" d="m392.86,295.81v-68.83h14.02v68.83h-14.02Z"/> <path fill="currentColor" d="m452.38,226.35l30.33,69.46h-15.38l-8.68-19.98h-26.67l-9.21,19.98h-2.3l31.9-69.46Zm-19.46,47.38h24.79l-12.13-27.61-12.66,27.61Z"/> <path fill="currentColor" d="m535.12,226.98v2.09h-19.46v66.74h-14.12v-66.74h-19.46v-2.09h53.03Z"/> </g> <g> <path fill="currentColor" d="m276.48,307.6l16.24,37.18h-3.02l-4.7-10.7h-19.43l-4.93,10.7h-1.23l17.08-37.18Zm-10.42,25.37h18.48l-9.02-20.61-9.46,20.61Z"/> <path fill="currentColor" d="m309.97,307.94c2.58,0,4.99.47,7.25,1.4,2.26.93,4.24,2.24,5.94,3.92,1.7,1.68,3.03,3.64,4,5.88.97,2.24,1.46,4.65,1.46,7.22s-.49,4.98-1.46,7.22c-.97,2.24-2.31,4.2-4,5.88-1.7,1.68-3.68,2.99-5.94,3.92-2.26.93-4.68,1.4-7.25,1.4h-10.64v-36.85h10.64Zm0,35.73c2.24,0,4.31-.48,6.22-1.46,1.9-.97,3.56-2.28,4.96-3.92,1.4-1.64,2.48-3.49,3.25-5.54.76-2.05,1.15-4.18,1.15-6.38s-.38-4.27-1.15-6.33c-.77-2.05-1.84-3.91-3.22-5.57-1.38-1.66-3.02-2.98-4.93-3.95-1.9-.97-4-1.46-6.27-1.46h-7.9v34.61h7.9Z"/> <path fill="currentColor" d="m365.02,307.94l-17.08,37.18-16.24-37.18h3.02l14.17,32.42,14.9-32.42h1.23Z"/> <path fill="currentColor" d="m374.82,307.94v36.85h-2.8v-36.85h2.8Z"/> <path fill="currentColor" d="m391.64,344.48c-1.66-.43-3.18-1.11-4.56-2.04-1.38-.93-2.46-2.11-3.25-3.53l.67-.9c.71,1.38,1.73,2.51,3.05,3.39s2.77,1.53,4.34,1.96c1.57.43,3.06.64,4.48.64,2.05,0,3.84-.34,5.38-1.01,1.53-.67,2.73-1.6,3.61-2.77.88-1.18,1.32-2.49,1.32-3.95,0-1.64-.47-2.97-1.4-3.98-.93-1.01-2.21-1.89-3.84-2.66-1.62-.76-3.46-1.6-5.52-2.49-2.61-1.16-4.83-2.21-6.64-3.16-1.81-.95-3.18-1.99-4.12-3.11-.93-1.12-1.4-2.46-1.4-4.03,0-1.9.59-3.55,1.76-4.93,1.18-1.38,2.72-2.44,4.62-3.19,1.9-.75,3.94-1.12,6.1-1.12,1.64,0,3.26.25,4.84.76,1.59.5,3,1.24,4.26,2.21,1.25.97,2.21,2.13,2.88,3.47l-.73.9c-.63-1.38-1.57-2.53-2.8-3.44-1.23-.91-2.58-1.6-4.03-2.07-1.46-.47-2.89-.7-4.31-.7-1.9,0-3.59.32-5.07.95-1.47.64-2.64,1.49-3.5,2.58-.86,1.08-1.29,2.32-1.29,3.7,0,1.53.49,2.78,1.46,3.75s2.31,1.84,4,2.6c1.7.77,3.67,1.65,5.91,2.66,2.24.97,4.23,1.93,5.96,2.88,1.74.95,3.1,2.01,4.09,3.16.99,1.16,1.48,2.58,1.48,4.26s-.52,3.32-1.57,4.82c-1.05,1.49-2.54,2.71-4.48,3.64-1.94.93-4.28,1.4-7,1.4-1.49,0-3.07-.21-4.73-.64Z"/> <path fill="currentColor" d="m434.18,307.6c2.58,0,4.99.49,7.25,1.46,2.26.97,4.24,2.31,5.94,4.03,1.7,1.72,3.03,3.72,4,5.99.97,2.28,1.46,4.7,1.46,7.28s-.49,5-1.46,7.28-2.31,4.27-4,5.99c-1.7,1.72-3.68,3.06-5.94,4.03-2.26.97-4.68,1.46-7.25,1.46s-4.99-.48-7.25-1.46c-2.26-.97-4.24-2.31-5.94-4.03-1.7-1.72-3.03-3.71-4-5.99s-1.46-4.7-1.46-7.28.49-5,1.46-7.28c.97-2.28,2.3-4.27,4-5.99,1.7-1.72,3.68-3.06,5.94-4.03,2.26-.97,4.68-1.46,7.25-1.46Zm0,1.12c-2.28,0-4.37.5-6.27,1.51-1.9,1.01-3.55,2.36-4.93,4.06-1.38,1.7-2.46,3.59-3.22,5.68-.77,2.09-1.15,4.22-1.15,6.38s.38,4.35,1.15,6.44c.76,2.09,1.85,3.99,3.25,5.68,1.4,1.7,3.05,3.04,4.96,4.03,1.9.99,3.98,1.48,6.22,1.48s4.31-.49,6.22-1.48,3.56-2.33,4.96-4.03c1.4-1.7,2.48-3.59,3.25-5.68.76-2.09,1.15-4.24,1.15-6.44s-.38-4.29-1.15-6.38c-.77-2.09-1.84-3.99-3.22-5.68-1.38-1.7-3.02-3.05-4.93-4.06-1.9-1.01-4-1.51-6.27-1.51Z"/> <path fill="currentColor" d="m486.48,334.98c.19.9.4,1.9.64,3.02.24,1.12.47,2.19.67,3.22.21,1.03.44,2.21.7,3.56h-2.8c-.11-.6-.29-1.44-.53-2.52-.24-1.08-.5-2.27-.76-3.56-.26-1.29-.52-2.51-.78-3.67-.49-2.39-1.65-4.15-3.5-5.29-1.85-1.14-3.99-1.71-6.41-1.71h-10.81v16.74h-2.74v-36.85h16.13c2.84,0,5.14.52,6.92,1.57,1.77,1.05,3.08,2.33,3.92,3.86.84,1.53,1.26,3.06,1.26,4.59,0,1.27-.3,2.58-.9,3.92-.6,1.34-1.52,2.53-2.77,3.56-1.25,1.03-2.88,1.76-4.9,2.21,1.98.52,3.51,1.47,4.59,2.86,1.08,1.38,1.77,2.88,2.07,4.48Zm-23.58-25.93v17.86h12.43c2.76,0,5.09-.72,6.97-2.16s2.88-3.72,3-6.86c.07-2.09-.34-3.79-1.23-5.1-.9-1.31-2.11-2.26-3.64-2.86-1.53-.6-3.23-.9-5.1-.9h-12.43Z"/> <path fill="currentColor" d="m503.37,344.48c-1.66-.43-3.18-1.11-4.56-2.04-1.38-.93-2.46-2.11-3.25-3.53l.67-.9c.71,1.38,1.73,2.51,3.05,3.39s2.77,1.53,4.34,1.96c1.57.43,3.06.64,4.48.64,2.05,0,3.84-.34,5.38-1.01,1.53-.67,2.73-1.6,3.61-2.77.88-1.18,1.32-2.49,1.32-3.95,0-1.64-.47-2.97-1.4-3.98-.93-1.01-2.21-1.89-3.84-2.66-1.62-.76-3.46-1.6-5.52-2.49-2.61-1.16-4.83-2.21-6.64-3.16-1.81-.95-3.18-1.99-4.12-3.11-.93-1.12-1.4-2.46-1.4-4.03,0-1.9.59-3.55,1.76-4.93,1.18-1.38,2.72-2.44,4.62-3.19,1.9-.75,3.94-1.12,6.1-1.12,1.64,0,3.26.25,4.84.76,1.59.5,3,1.24,4.26,2.21,1.25.97,2.21,2.13,2.88,3.47l-.73.9c-.63-1.38-1.57-2.53-2.8-3.44-1.23-.91-2.58-1.6-4.03-2.07-1.46-.47-2.89-.7-4.31-.7-1.9,0-3.59.32-5.07.95-1.47.64-2.64,1.49-3.5,2.58-.86,1.08-1.29,2.32-1.29,3.7,0,1.53.49,2.78,1.46,3.75s2.31,1.84,4,2.6c1.7.77,3.67,1.65,5.91,2.66,2.24.97,4.23,1.93,5.96,2.88,1.74.95,3.1,2.01,4.09,3.16.99,1.16,1.48,2.58,1.48,4.26s-.52,3.32-1.57,4.82c-1.05,1.49-2.54,2.71-4.48,3.64-1.94.93-4.28,1.4-7,1.4-1.49,0-3.07-.21-4.73-.64Z"/> </g> <g> <path fill="currentColor" d="m333.79,360.23c.77.04,1.35.07,1.75.09.4.02.72.03.96.03.47,0,.92,0,1.37-.03.45-.02.89-.04,1.34-.08v.75h-.33c-.57,0-.95.2-1.15.58-.2.39-.3,1.29-.3,2.69v2.14l.03,7.87c.4.02.78.04,1.14.05.36.01.7.02,1.03.02,1.92,0,3.16-.18,3.71-.53.55-.35,1-1.04,1.33-2.06l.77.24c-.22.62-.42,1.22-.59,1.82s-.32,1.19-.45,1.79c-1.19-.04-2.28-.06-3.28-.08-1-.02-1.94-.03-2.81-.03-.62,0-1.3,0-2.06.03-.76.02-1.65.04-2.69.08v-.7s.1.01.15.02c.05,0,.12,0,.21,0,.97,0,1.45-1.38,1.46-4.13,0-.62,0-1.11.01-1.46l.02-2.92c0-.32,0-.72.01-1.21,0-.49.01-.84.01-1.03,0-1.32-.11-2.17-.32-2.57-.21-.4-.62-.6-1.23-.6h-.09v-.76Z"/> <path fill="currentColor" d="m355.71,369.59h-5.24c-.41,0-.78,0-1.13.02s-.66.04-.96.06v.4c0,1.4.32,2.49.97,3.25.65.77,1.56,1.15,2.74,1.15.52,0,1.04-.09,1.55-.26.51-.17,1.05-.45,1.62-.82l.42.69c-.74.6-1.47,1.06-2.21,1.36-.73.31-1.46.46-2.18.46-1.39,0-2.54-.5-3.44-1.49-.9-.99-1.35-2.27-1.35-3.82,0-1.65.47-3.04,1.42-4.17s2.1-1.69,3.46-1.69c1.27,0,2.28.42,3.03,1.27s1.18,2.04,1.29,3.58Zm-1.99-1.13c-.21-.88-.54-1.56-.98-2.03-.44-.47-.96-.7-1.57-.7-.69,0-1.28.28-1.77.83-.49.55-.81,1.3-.96,2.23,1.42,0,2.53-.03,3.35-.08.81-.05,1.46-.14,1.93-.26Z"/> <path fill="currentColor" d="m364.43,365.49c.48,0,.96,0,1.46-.02.49-.01.98-.04,1.48-.06l-.05,1.07c-.32-.04-.66-.06-1.04-.08-.38-.02-.81-.03-1.31-.03.34.26.59.57.77.94.18.37.26.78.26,1.22,0,.97-.4,1.8-1.21,2.49s-1.8,1.04-2.97,1.04c-.12,0-.29,0-.52-.03-.22-.02-.38-.03-.47-.04-.19.13-.38.26-.55.4-.17.14-.33.29-.47.44.11.2.23.38.37.55.14.17.3.33.49.48.22,0,.54,0,.96-.01,1-.02,1.66-.03,1.98-.03,1.3,0,2.23.2,2.8.59s.85,1.03.85,1.9c0,.56-.16,1.12-.47,1.69-.31.57-.75,1.09-1.32,1.56-.58.48-1.25.86-2,1.13-.76.27-1.51.41-2.25.41-1.11,0-2.04-.29-2.79-.88-.75-.59-1.12-1.3-1.12-2.14,0-.49.16-.96.47-1.43.31-.47.86-1.02,1.64-1.66-.32-.29-.59-.59-.8-.9-.21-.31-.38-.64-.51-1.01.26-.24.54-.47.85-.69.31-.22.65-.44,1.02-.65-.72-.23-1.29-.61-1.7-1.15s-.61-1.16-.61-1.87c0-1.11.41-2.05,1.23-2.81.82-.77,1.85-1.15,3.08-1.15.45,0,.87.06,1.27.18.39.12.79.3,1.19.55Zm-4.5,9.95c-.35.39-.61.75-.77,1.07-.17.32-.25.63-.25.92,0,.67.3,1.23.9,1.69.6.46,1.35.69,2.25.69,1.02,0,1.91-.28,2.66-.85.75-.57,1.12-1.21,1.12-1.92,0-.58-.18-.99-.55-1.22s-1.07-.35-2.11-.35c-.11,0-.34,0-.71-.01s-.67-.01-.92-.01h-1.62Zm1.96-9.88c-.77,0-1.36.24-1.78.71-.42.47-.63,1.14-.63,2,0,.95.21,1.68.62,2.21.41.53.99.79,1.73.79s1.34-.24,1.77-.71c.43-.48.64-1.13.64-1.97,0-.97-.2-1.71-.61-2.23s-.99-.78-1.74-.78Z"/> <path fill="currentColor" d="m378.13,374.03l.3.68c-.54.39-1.03.69-1.47.9-.44.21-.8.32-1.07.32-.46,0-.8-.13-1.03-.4-.23-.27-.35-.67-.38-1.22-.78.52-1.43.9-1.94,1.12-.52.22-.98.34-1.39.34-.72,0-1.33-.27-1.82-.82-.49-.54-.73-1.21-.73-2,0-1.34,1.44-2.35,4.33-3.03.68-.16,1.21-.28,1.59-.38,0-.12,0-.3.01-.53.02-.47.03-.78.03-.92,0-.75-.15-1.29-.46-1.65-.31-.36-.78-.53-1.41-.53s-1.1.11-1.46.34c-.35.22-.53.53-.53.92,0,.04,0,.08.01.14,0,.06.01.11.01.13,0,.22-.11.41-.32.55-.21.15-.47.22-.77.22-.26,0-.45-.04-.57-.13-.12-.09-.18-.22-.18-.4,0-.57.48-1.21,1.45-1.92.97-.71,1.97-1.06,3-1.06s1.75.27,2.27.82c.52.55.77,1.35.77,2.41,0,.57-.03,1.45-.1,2.64-.07,1.19-.1,2.09-.1,2.71,0,.47.05.78.16.95.1.17.29.25.55.25.11,0,.26-.03.45-.1.18-.07.45-.19.81-.36Zm-3.66-3.63c-.14.04-.34.09-.61.16-2.33.64-3.49,1.39-3.49,2.26,0,.47.15.86.45,1.15.3.3.7.45,1.19.45.3,0,.65-.08,1.04-.24.39-.16.85-.41,1.38-.75l.04-3.03Z"/> <path fill="currentColor" d="m382.44,358.98c-.04,1.33-.07,3.07-.08,5.2,0,.82-.01,1.41-.01,1.77l-.02,2.2v4.79c0,.82.09,1.34.27,1.56.18.22.53.33,1.04.33h.25v.75c-.49-.04-.96-.06-1.39-.08-.43-.02-.81-.03-1.14-.03s-.71,0-1.11.03c-.4.02-.82.04-1.26.08v-.75s.1,0,.18.01.13.01.17.01c.5,0,.84-.13,1-.39.17-.26.25-1.02.25-2.28v-.79l.04-8.08v-1.85c0-.31-.07-.54-.2-.69-.13-.15-.33-.23-.6-.23-.1,0-.29.03-.56.08-.04,0-.06.01-.08.01l-.16-.7c.6-.1,1.18-.23,1.75-.39.56-.16,1.11-.34,1.65-.56Z"/> <path fill="currentColor" d="m401.4,373.66c-.78.75-1.57,1.32-2.36,1.71s-1.58.58-2.36.58c-1.22,0-2.24-.41-3.06-1.23-.82-.82-1.24-1.84-1.24-3.05,0-1.05.33-1.96,1-2.72.67-.76,1.63-1.34,2.9-1.73-.59-.61-1.03-1.21-1.33-1.8s-.45-1.17-.45-1.72c0-.95.36-1.77,1.08-2.48.72-.71,1.56-1.06,2.52-1.06s1.78.29,2.41.87c.63.58.95,1.3.95,2.17,0,.71-.24,1.38-.73,2.01-.48.63-1.24,1.27-2.27,1.9l3.67,4.45c.74-.81,1.34-1.68,1.8-2.63.46-.94.69-1.66.69-2.17,0-.33-.1-.55-.29-.68s-.56-.18-1.1-.18v-.79c.48.05.92.09,1.33.11.4.03.75.04,1.05.04.21,0,.48,0,.79-.03.31-.02.83-.06,1.56-.12v.82h-.24c-.75,0-1.29.38-1.64,1.14-.02.04-.04.08-.05.12-.54,1.15-1.07,2.12-1.6,2.94-.53.81-1.1,1.52-1.7,2.12l.44.53c.51.62.97,1.06,1.39,1.33.42.27.83.41,1.25.41.34,0,.69-.09,1.07-.29.38-.19.75-.46,1.13-.82l.44.46c-.54.73-1.12,1.28-1.71,1.66-.6.38-1.21.56-1.82.56-.54,0-1.04-.15-1.52-.46s-1.14-.96-2-1.96Zm-.55-.69l-4.07-5.1c-.87.29-1.52.7-1.95,1.23-.43.53-.65,1.17-.65,1.92,0,.94.33,1.75,1,2.42.67.68,1.47,1.02,2.41,1.02.5,0,1.01-.12,1.54-.36.53-.24,1.1-.61,1.71-1.12Zm-2.87-6.45c.57-.38,1.01-.85,1.33-1.42s.48-1.16.48-1.77c0-.65-.18-1.19-.53-1.6-.35-.42-.81-.62-1.36-.62-.52,0-.94.18-1.27.54-.33.36-.49.83-.49,1.4,0,.52.16,1.08.48,1.69.32.61.78,1.2,1.36,1.78Z"/> <path fill="currentColor" d="m418.91,374.84h.38c.51,0,.87-.06,1.08-.19.21-.13.37-.36.45-.69.06-.22.11-1.03.13-2.42s.04-3.55.04-6.49v-3.43h-2.17c-1.05,0-1.76.14-2.13.42-.37.28-.64.88-.82,1.79l-.7-.15c.14-.62.24-1.24.31-1.84.07-.6.11-1.19.11-1.77.21.14.65.23,1.3.29s1.8.09,3.44.09h2.62c2.18,0,3.58-.03,4.21-.08.63-.05,1.07-.15,1.32-.29,0,.07,0,.18-.01.34,0,.15-.01.27-.01.35,0,.45.02.92.06,1.4s.1.97.18,1.48l-.68.13c-.09-.81-.31-1.36-.66-1.65s-1.1-.46-2.24-.49h-2.03c0,.41-.01.98-.02,1.73-.01,1.96-.02,3.27-.02,3.94,0,2.54.02,4.26.05,5.17s.09,1.46.17,1.69c.09.26.25.44.46.54s.54.15.99.15h.38v.75c-.59-.03-1.16-.05-1.68-.06s-1-.02-1.41-.02c-.37,0-.82,0-1.35.02s-1.11.04-1.73.06v-.75Z"/> <path fill="currentColor" d="m436.69,374.03l.3.68c-.54.39-1.03.69-1.47.9-.44.21-.8.32-1.07.32-.46,0-.8-.13-1.03-.4-.23-.27-.35-.67-.38-1.22-.78.52-1.43.9-1.94,1.12-.52.22-.98.34-1.39.34-.72,0-1.33-.27-1.82-.82-.49-.54-.73-1.21-.73-2,0-1.34,1.44-2.35,4.33-3.03.68-.16,1.21-.28,1.59-.38,0-.12,0-.3.01-.53.02-.47.03-.78.03-.92,0-.75-.15-1.29-.46-1.65-.31-.36-.78-.53-1.41-.53s-1.1.11-1.46.34c-.35.22-.53.53-.53.92,0,.04,0,.08.01.14,0,.06.01.11.01.13,0,.22-.11.41-.32.55-.21.15-.47.22-.77.22-.26,0-.45-.04-.57-.13-.12-.09-.18-.22-.18-.4,0-.57.48-1.21,1.45-1.92.97-.71,1.97-1.06,3-1.06s1.75.27,2.27.82c.52.55.77,1.35.77,2.41,0,.57-.03,1.45-.1,2.64s-.1,2.09-.1,2.71c0,.47.05.78.16.95s.29.25.55.25c.11,0,.26-.03.45-.1.18-.07.45-.19.81-.36Zm-3.66-3.63c-.14.04-.34.09-.61.16-2.33.64-3.49,1.39-3.49,2.26,0,.47.15.86.45,1.15.3.3.7.45,1.19.45.3,0,.65-.08,1.04-.24.39-.16.85-.41,1.38-.75l.04-3.03Z"/> <path fill="currentColor" d="m437.14,374.85s.06,0,.1,0c.04,0,.09,0,.17,0,.67,0,1.88-1.11,3.63-3.33.39-.51.7-.9.92-1.17l-2.42-3.33c-.37-.5-.67-.84-.89-1.01-.22-.17-.46-.26-.7-.26-.01,0-.04,0-.08.01s-.07.01-.09.01v-.73c.09,0,.23.01.41.02.84.04,1.43.06,1.75.06.26,0,.57,0,.93-.02s.74-.04,1.16-.06v.73h-.09c-.24,0-.43.04-.55.12-.12.08-.18.21-.18.38,0,.25.55,1.11,1.67,2.58l.15.18c.7-.92,1.19-1.59,1.46-2s.4-.68.4-.83c0-.16-.05-.27-.15-.33-.1-.06-.31-.1-.63-.11v-.73c.34.03.66.05.96.06s.57.02.82.02c.31,0,.62,0,.92-.02.31-.01.63-.04.96-.06v.72s-.05,0-.08,0c-.03,0-.06,0-.11,0-.53,0-1.5.88-2.9,2.65-.47.58-.83,1.04-1.11,1.36l2.89,3.86c.39.52.69.85.9.99.21.14.45.21.73.21h.12v.75c-.13,0-.3-.01-.53-.02-.81-.04-1.36-.06-1.65-.06-.21,0-.64.01-1.29.04-.37.02-.64.04-.84.04v-.75s.12,0,.12,0c.27,0,.47-.04.59-.11.12-.07.18-.19.18-.35s-.39-.78-1.17-1.83c-.44-.59-.8-1.08-1.07-1.45-.76.98-1.31,1.73-1.66,2.26-.35.53-.52.88-.52,1.06,0,.15.05.26.15.32.1.06.26.1.49.1h.13v.75c-.39-.03-.75-.05-1.1-.06s-.66-.02-.94-.02c-.23,0-.51,0-.84.02s-.7.04-1.1.06v-.74Z"/> </g> </svg>
+      <div class="sep"></div>
+      <div><h1>Implementación de Odoo</h1><small>Grupo PRIAT · 45 razones sociales</small></div>
+    </div>
+    <div class="fases" id="fases"></div>
+    <div class="quien"><button class="btn sm" id="paraClaude" title="Copia el estado completo del tablero en texto">Copiar para Claude</button><span id="quien"></span><button class="tema" id="tema" aria-label="Cambiar tema">◐</button></div>
+    <nav class="tabs" id="tabs">
+      <a href="#resumen" data-v="resumen">Resumen</a>
+      <a href="#plan" data-v="plan">Plan</a>
+      <a href="#tareas" data-v="tareas">Tareas</a>
+      <a href="#semanas" data-v="semanas">Semanas</a>
+      <a href="#procesos" data-v="procesos">Procesos contables</a>
+      <a href="#decisiones" data-v="decisiones">Decisiones</a>
+      <a href="#buzon" data-v="buzon">Buzón para Claude <span class="n" id="nNotas"></span></a>
+    </nav>
+  </div>
+</header>
+<main class="wrap" id="main"></main>
+<footer class="wrap pie"><span>Cada cambio queda guardado, cifrado, con nombre, fecha y hora.</span><a href="https://github.com/JuanArandaEstriba/odoo-priat-tablero/commits/main" target="_blank" rel="noopener">Historial de cambios</a><button class="btn sm" id="btnCerrar" type="button">Cerrar sesión en este equipo</button></footer>
+<div id="layer"></div>
+
+<script>
+(() => {
+"use strict";
+// ---------- Estado ----------
+const S = { frentes: [], etapas: [], tareas: [], indicadores: [], procesos: [], decisiones: [], semanas: [], actividad: [], personas: [], notas: [] };
+const COLS = Object.keys(S);
+let loaded = new Set(), canWrite = false, meId = null;
+let view = "resumen", filt = { frente: "todos", resp: "", q: "", verHechas: false };
+const names = {};
+
+const ESTADOS = [["pendiente", "Por hacer"], ["en_curso", "En curso"], ["atorada", "Atorada"], ["hecha", "Hecha"]];
+const EST = Object.fromEntries(ESTADOS);
+const SEM = { verde: "En tiempo", ambar: "Con riesgo", rojo: "Atorado" };
+const NIVELES = ["Diseñado", "Probado", "Capacitado", "En uso"];
+const FASES = [
+  { n: "Pruebas", d: "nov 2026", ini: "2026-11-01", fin: "2026-11-30" },
+  { n: "Paralelo con Compac", d: "dic 2026", ini: "2026-12-01", fin: "2026-12-31" },
+  { n: "Odoo principal", d: "ene 2027", ini: "2027-01-01", fin: "2027-01-31" },
+];
+const MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+// ---------- Utilidades ----------
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const today = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+const parse = (s) => { if (!s) return null; const [y, m, d] = s.slice(0, 10).split("-").map(Number); return new Date(y, m - 1, d); };
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const fmt = (s) => { const d = parse(s); return d ? `${d.getDate()} ${MES[d.getMonth()]}` : ""; };
+const fmtY = (s) => { const d = parse(s); return d ? `${d.getDate()} ${MES[d.getMonth()]} ${d.getFullYear()}` : ""; };
+const monday = (d) => { const x = new Date(d); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); return x; };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const weekNum = (d) => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 864e5 + 1) / 7); };
+const num = (n) => n == null ? "—" : Number(n).toLocaleString("es-MX");
+const late = (t) => t.estado !== "hecha" && t.fecha && parse(t.fecha) < today();
+const nowISO = () => new Date().toISOString();
+const initials = (s) => (s || "?").split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+const byOrden = (a, b) => (a.orden ?? 0) - (b.orden ?? 0);
+const frenteDe = (id) => S.frentes.find((f) => f.id === id);
+const fname = (id) => frenteDe(id)?.nombre || id;
+const fcol = (id) => { const f = frenteDe(id); return `var(--f${((f?.orden ?? 8) % 10) + 1})`; };
+const ago = (s) => { if (!s) return ""; const m = Math.round((Date.now() - new Date(s)) / 6e4); if (m < 1) return "ahora"; if (m < 60) return `hace ${m} min`; const h = Math.round(m / 60); if (h < 24) return `hace ${h} h`; const d = Math.round(h / 24); return d === 1 ? "ayer" : `hace ${d} días`; };
+function toast(msg) { const el = document.createElement("div"); el.className = "toast"; el.textContent = msg; document.body.appendChild(el); setTimeout(() => el.remove(), 2400); }
+
+// ---------- Cálculos ----------
+function statsFrente(fid) {
+  const ts = S.tareas.filter((t) => t.frente === fid);
+  const c = { total: ts.length, hecha: 0, en_curso: 0, atorada: 0, pendiente: 0, late: 0 };
+  ts.forEach((t) => { c[t.estado] = (c[t.estado] || 0) + 1; if (late(t)) c.late++; });
+  c.pct = c.total ? Math.round((c.hecha / c.total) * 100) : 0;
+  return c;
+}
+function statsGlobal() {
+  const c = { total: S.tareas.length, hecha: 0, atorada: 0, en_curso: 0, late: 0, semana: 0 };
+  const w0 = monday(today()), w1 = addDays(w0, 7);
+  S.tareas.forEach((t) => { if (t.estado === "hecha") c.hecha++; if (t.estado === "atorada") c.atorada++; if (t.estado === "en_curso") c.en_curso++; if (late(t)) c.late++;
+    if (t.hecha_at) { const d = new Date(t.hecha_at); if (d >= w0 && d < w1) c.semana++; } });
+  c.pct = c.total ? Math.round((c.hecha / c.total) * 100) : 0;
+  return c;
+}
+function nextEtapa(fid) {
+  const es = S.etapas.filter((e) => e.frente === fid && e.estado !== "hecha").sort((a, b) => (a.fin || "").localeCompare(b.fin || ""));
+  return es[0];
+}
+
+// ---------- Fases ----------
+function renderFases() {
+  const t = today();
+  $("#fases").innerHTML = FASES.map((f) => {
+    const a = parse(f.ini), b = parse(f.fin); const p = Math.max(0, Math.min(1, (t - a) / (b - a + 864e5)));
+    const now = t >= a && t <= b;
+    return `<div class="fase${now ? " now" : ""}" title="${esc(f.n)} · ${esc(f.d)}"><b>${esc(f.n)}</b><span>${esc(f.d)}${now ? " · ahora" : ""}</span><div class="fill"><i style="width:${(p * 100).toFixed(0)}%"></i></div></div>`;
+  }).join("");
+}
+
+// ---------- Vistas ----------
+function render() {
+  renderFases();
+  const nn = S.notas.filter((x) => x.estado === "nueva").length; const nb = $("#nNotas"); if (nb) nb.textContent = nn ? nn : "";
+  document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("on", a.dataset.v === view));
+  const main = $("#main");
+  const ready = COLS.every((c) => loaded.has(c));
+  if (!DK) { main.innerHTML = vCandado(); bindCandado(); return; }
+  if (!ready) {
+    main.innerHTML = `<div class="card empty">${loadError ? "No se pudo cargar el tablero. Revisa tu conexión y recarga la página." : "Cargando el tablero…"}</div>`;
+    return;
+  }
+  const fn = { resumen: vResumen, plan: vPlan, tareas: vTareas, semanas: vSemanas, procesos: vProcesos, decisiones: vDecisiones, buzon: vBuzon }[view] || vResumen;
+  main.innerHTML = `<div class="view">${fn()}</div>`;
+  bindView();
+}
+
+function gaugeSVG(p) {
+  const r = 30, c = 2 * Math.PI * r, off = c * (1 - p / 100);
+  return `<svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--panel-2)" stroke-width="8"/><circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 38 38)"/></svg>`;
+}
+
+function vResumen() {
+  const g = statsGlobal();
+  const t = today(); const goLive = parse("2027-01-04"); const dias = Math.max(0, Math.round((goLive - t) / 864e5));
+  const w0 = monday(t);
+  const hechasSemana = S.tareas.filter((x) => x.hecha_at && new Date(x.hecha_at) >= w0).sort((a, b) => b.hecha_at.localeCompare(a.hecha_at));
+  const atoradas = S.tareas.filter((x) => x.estado === "atorada" || late(x)).sort((a, b) => (a.estado === "atorada" ? -1 : 1) - (b.estado === "atorada" ? -1 : 1) || (a.fecha || "").localeCompare(b.fecha || ""));
+  const lim = addDays(t, 21);
+  const proximos = S.etapas.filter((e) => e.estado !== "hecha" && parse(e.fin) >= t && parse(e.fin) <= lim).sort((a, b) => a.fin.localeCompare(b.fin));
+  const proxT = S.tareas.filter((x) => x.estado !== "hecha" && x.fecha && parse(x.fecha) >= t && parse(x.fecha) <= lim);
+  const decAb = S.decisiones.filter((d) => d.estado !== "decidida").length;
+
+  return `
+  <section class="hero">
+    <div class="card lead">
+      <div class="eyebrow">Hoy · ${fmtY(iso(t))} · semana ${weekNum(t)}</div>
+      <h2>Contabilidad de las 45 razones sociales en Odoo, con Compac solo de respaldo, en enero de 2027.</h2>
+      <div class="gauge">${gaugeSVG(g.pct)}<div><div class="big mono">${g.pct}%</div><div class="muted">${num(g.hecha)} de ${num(g.total)} tareas terminadas</div></div></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b class="mono">${dias}</b><span>días para Odoo principal (meta 4 ene)</span></div>
+      <div class="stat"><b class="mono">${g.semana}</b><span>tareas terminadas esta semana</span></div>
+      <div class="stat ${g.atorada + g.late ? "alerta" : ""}"><b class="mono">${g.atorada + g.late}</b><span>atoradas o vencidas</span></div>
+      <div class="stat"><b class="mono">${decAb}</b><span>decisiones pendientes</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2>Indicadores</h2><p>De Odoo y del correo de dirección. ${canWrite ? "Toca ✎ para registrar un valor nuevo." : ""}</p></div>
+    <div class="kpis">${S.indicadores.sort(byOrden).map(kpiCard).join("")}</div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2>Frentes</h2><p>Toca un frente para ver sus tareas.</p></div>
+    <div class="frentes">${S.frentes.sort(byOrden).map(frenteCard).join("")}</div>
+  </section>
+
+  <section class="cols">
+    <div class="card">
+      <div class="pad sec-h" style="margin:0"><h3>Terminado esta semana</h3><span class="mono faint">${hechasSemana.length}</span></div>
+      <div class="list">${hechasSemana.length ? hechasSemana.slice(0, 12).map((x) => liTask(x, fmt(x.hecha_at))).join("") : `<div class="empty">Aún no se termina nada esta semana.</div>`}</div>
+    </div>
+    <div class="card">
+      <div class="pad sec-h" style="margin:0"><h3>Atorado y por qué</h3><span class="mono faint">${atoradas.length}</span></div>
+      <div class="list">${atoradas.length ? atoradas.slice(0, 12).map((x) => liTask(x, x.fecha ? fmt(x.fecha) : "", true)).join("") : `<div class="empty">Nada atorado.</div>`}</div>
+    </div>
+    <div class="card">
+      <div class="pad sec-h" style="margin:0"><h3>Próximos compromisos (3 semanas)</h3><span class="mono faint">${proximos.length + proxT.length}</span></div>
+      <div class="list">
+        ${proximos.map((e) => `<button class="li" data-frente="${esc(e.frente)}"><span class="dot-s" style="background:var(--accent)"></span><span class="tx"><b>${esc(e.nombre)}</b><span>${esc(fname(e.frente))} · etapa${e.confirmada ? "" : " · fecha por confirmar"}</span></span><span class="dt">${fmt(e.fin)}</span></button>`).join("")}
+        ${proxT.map((x) => liTask(x, fmt(x.fecha))).join("")}
+        ${!proximos.length && !proxT.length ? `<div class="empty">Sin compromisos con fecha en las próximas 3 semanas.</div>` : ""}
+      </div>
+    </div>
+  </section>
+
+  <section class="card feed">
+    <div class="pad sec-h" style="margin:0"><h3>Movimientos recientes</h3><span class="faint">quién movió qué</span></div>
+    <div class="list">${S.actividad.length ? S.actividad.sort((a, b) => (b.at || "").localeCompare(a.at || "")).slice(0, 10).map((a) => `<div class="li">${avatar(a.por)}<span class="tx"><b>${esc(a.texto)}</b><span>${esc(who(a.por))} · ${ago(a.at)}${a.frente ? " · " + esc(fname(a.frente)) : ""}</span></span></div>`).join("") : `<div class="empty">Aquí aparecerá cada cambio que haga el equipo.</div>`}</div>
+  </section>`;
+}
+
+function who(id) { if (!id) return "Carga inicial"; if (id === "claude") return "Claude"; const e = EDITORES.find((x) => x.id === id); return e ? e.nombre : (names[id] || "Alguien del equipo"); }
+
+function kpiCard(k) {
+  const h = (k.historial || []).slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const prev = h.length > 1 ? h[h.length - 2].valor : null;
+  const d = prev == null ? null : k.valor - prev;
+  const good = d == null || d === 0 ? null : (k.direccion === "bajar" ? d < 0 : d > 0);
+  let pct = null, color = "var(--accent)";
+  if (k.meta != null) {
+    if (k.direccion === "subir") pct = k.meta ? k.valor / k.meta : 0;
+    else { const base = h.length ? Math.max(...h.map((x) => x.valor)) : k.valor; pct = base ? 1 - k.valor / base : 1; }
+    pct = Math.max(0, Math.min(1, pct));
+    color = k.direccion === "bajar" ? (k.valor === 0 ? "var(--verde)" : "var(--rojo)") : (pct >= 1 ? "var(--verde)" : "var(--accent)");
+  }
+  return `<div class="card kpi">
+    ${canWrite ? `<button class="edit" data-kpi="${esc(k.id)}" aria-label="Registrar valor de ${esc(k.nombre)}">✎</button>` : ""}
+    <div class="n">${esc(k.nombre)}</div>
+    <div class="v">${num(k.valor)}<small>${esc(k.unidad || "")}${k.meta != null ? ` · meta ${num(k.meta)}` : ""}</small></div>
+    ${pct != null ? `<div class="bar"><i style="width:${Math.max(3, pct * 100).toFixed(0)}%;background:${color}"></i></div>` : ""}
+    <div class="src"><span>${esc(k.fuente || "")}</span>${d != null && d !== 0 ? `<span class="delta" style="color:${good ? "var(--verde)" : "var(--rojo)"}">${d > 0 ? "+" : ""}${num(d)}</span>` : ""}</div>
+  </div>`;
+}
+
+function frenteCard(f) {
+  const c = statsFrente(f.id); const ne = nextEtapa(f.id);
+  const w = (n) => c.total ? (n / c.total * 100).toFixed(1) : 0;
+  return `<button class="frente" data-frente="${esc(f.id)}">
+    <div class="t"><div><h3><span class="fdot" style="background:${fcol(f.id)}"></span>${esc(f.nombre)}</h3><div class="who">${esc(f.lider || "Sin líder")}${f.equipo ? " · " + esc(f.equipo) : ""}</div></div><span class="pill sem-${esc(f.semaforo || "verde")}">${SEM[f.semaforo] || "En tiempo"}</span></div>
+    <div class="prog"><div class="track"><i style="width:${w(c.hecha)}%;background:var(--verde)"></i><i style="width:${w(c.en_curso)}%;background:var(--azul);opacity:.55"></i><i style="width:${w(c.atorada)}%;background:var(--rojo);opacity:.7"></i></div><b>${c.pct}%</b></div>
+    <div class="counts"><span><b>${c.hecha}</b> hechas</span><span><b>${c.en_curso}</b> en curso</span><span><b>${c.pendiente}</b> por hacer</span>${c.atorada ? `<span style="color:var(--rojo)"><b style="color:var(--rojo)">${c.atorada}</b> atoradas</span>` : ""}${c.late ? `<span style="color:var(--rojo)"><b style="color:var(--rojo)">${c.late}</b> vencidas</span>` : ""}</div>
+    ${ne ? `<div class="next"><span>Siguiente etapa</span><b>${esc(ne.nombre)} · <span class="mono" style="color:${parse(ne.fin) < today() ? "var(--rojo)" : "var(--muted)"}">${fmt(ne.fin)}${ne.confirmada ? "" : " (por confirmar)"}</span></b></div>` : ""}
+    ${f.motivo && f.semaforo !== "verde" ? `<div class="why ${esc(f.semaforo)}">${esc(f.motivo)}</div>` : ""}
+  </button>`;
+}
+
+function liTask(x, dt, showWhy) {
+  const col = { hecha: "var(--verde)", en_curso: "var(--azul)", atorada: "var(--rojo)", pendiente: "var(--faint)" }[x.estado];
+  const sub = showWhy && x.motivo ? x.motivo : `${fname(x.frente)}${x.responsable ? " · " + x.responsable : ""}`;
+  return `<button class="li" data-task="${esc(x.id)}"><span class="dot-s" style="background:${col}"></span><span class="tx"><b>${esc(x.texto)}</b><span>${esc(sub)}${showWhy && late(x) && x.estado !== "atorada" ? " · vencida" : ""}</span></span><span class="dt${late(x) ? " late" : ""}">${esc(dt || "")}</span></button>`;
+}
+
+// Plan
+function vPlan() {
+  const start = monday(parse("2026-10-26")), weeks = 15; const end = addDays(start, weeks * 7);
+  const total = end - start; const t = today();
+  const pos = (d) => ((d - start) / total) * 100;
+  const wk = [...Array(weeks)].map((_, i) => addDays(start, i * 7));
+  const tpos = pos(t);
+  const head = wk.map((d) => { const isNow = t >= d && t < addDays(d, 7); return `<div class="${d.getDate() <= 7 ? "m" : ""}${isNow ? " hoy" : ""}">${d.getDate()} ${MES[d.getMonth()]}</div>`; }).join("");
+  const gridCols = `grid-template-columns:repeat(${weeks},1fr)`;
+  const gl = `<div class="gl" style="${gridCols}">${wk.map(() => "<div></div>").join("")}</div>`;
+  let rows = "";
+  S.frentes.sort(byOrden).forEach((f) => {
+    const es = S.etapas.filter((e) => e.frente === f.id).sort(byOrden);
+    const c = statsFrente(f.id);
+    rows += `<div class="row grp"><div class="lbl"><span class="fdot" style="background:${fcol(f.id)}"></span><span>${esc(f.nombre)}</span><span class="pill sem-${esc(f.semaforo)}" style="margin-left:auto">${c.pct}%</span></div><div class="lane">${gl}${tpos >= 0 && tpos <= 100 ? `<div class="todayline" style="left:${tpos}%"></div>` : ""}</div></div>`;
+    es.forEach((e) => {
+      const a = parse(e.inicio), b = addDays(parse(e.fin), 1);
+      const clip = a < start; const l = Math.max(0, pos(a)), r = Math.min(100, pos(b));
+      const isLate = e.estado !== "hecha" && parse(e.fin) < t;
+      const cls = `${isLate ? "late" : e.estado}${e.confirmada ? "" : " prop"}${clip ? " clip" : ""}`;
+      const bar = b <= start ? `<div class="bar-e ${cls}" style="left:0;width:auto;max-width:100%" title="${esc(e.nombre)}">← ${esc(fmt(e.fin))} · ${esc(e.nombre)}</div>`
+        : `<div class="bar-e ${cls}" style="left:${l}%;width:max(${(r - l).toFixed(2)}%, 14px)" title="${esc(e.nombre)} · ${fmt(e.inicio)} → ${fmt(e.fin)}${e.confirmada ? "" : " (por confirmar)"}">${r - l > 9 ? esc(fmt(e.fin)) : ""}</div>`;
+      rows += `<div class="row"><div class="lbl" ${canWrite ? `data-etapa="${esc(e.id)}" style="cursor:pointer"` : ""}><span class="dot-s" style="margin:0;background:${isLate ? "var(--rojo)" : e.estado === "hecha" ? "var(--verde)" : e.estado === "en_curso" ? "var(--azul)" : "var(--faint)"}"></span><span title="${esc(e.nombre)}">${esc(e.nombre)}</span></div><div class="lane">${gl}${tpos >= 0 && tpos <= 100 ? `<div class="todayline" style="left:${tpos}%"></div>` : ""}${bar}</div></div>`;
+    });
+  });
+  return `<section>
+    <div class="sec-h"><h2>Plan por frente</h2>
+      <div class="legend"><span><i style="background:var(--verde-soft)"></i>Hecha</span><span><i style="background:var(--azul-soft)"></i>En curso</span><span><i style="background:var(--panel-2);border:1px solid var(--line-2)"></i>Por hacer</span><span><i style="background:var(--rojo-soft)"></i>Vencida</span><span><i style="border:1px dashed var(--muted)"></i>Fecha por confirmar</span><span><i style="background:var(--accent);width:2px"></i>Hoy</span></div>
+    </div>
+    <div class="card gantt"><div class="g">
+      <div class="row head"><div class="lbl"><span class="eyebrow">Frente / etapa</span></div><div class="lane"><div class="weeks" style="${gridCols}">${head}</div></div></div>
+      ${rows}
+    </div></div>
+    <p class="muted" style="margin-top:10px">Las fechas en Odoo y las de la junta del 16-nov están confirmadas; las punteadas son propuestas para acordar con el equipo. ${canWrite ? "Toca el nombre de una etapa para cambiar sus fechas o su estado." : ""}</p>
+  </section>`;
+}
+
+// Tareas
+function vTareas() {
+  const resps = [...new Set(S.tareas.map((t) => t.responsable).filter(Boolean))].sort();
+  let ts = S.tareas.filter((t) => (filt.frente === "todos" || t.frente === filt.frente) && (!filt.resp || t.responsable === filt.resp) && (!filt.q || (t.texto + " " + (t.nota || "")).toLowerCase().includes(filt.q.toLowerCase())));
+  const cols = ESTADOS.map(([k, n]) => {
+    let items = ts.filter((t) => t.estado === k).sort((a, b) => (late(b) - late(a)) || (a.fecha || "9").localeCompare(b.fecha || "9") || byOrden(a, b));
+    if (k === "hecha") items.sort((a, b) => (b.hecha_at || "").localeCompare(a.hecha_at || ""));
+    const total = items.length; const cap = k === "hecha" && !filt.verHechas ? 8 : 400;
+    return `<div class="col" data-col="${k}"><div class="ch"><span class="pill s-${k}">${n}</span><span class="mono">${total}</span></div>
+      ${items.slice(0, cap).map(taskCard).join("") || `<div class="faint" style="padding:6px 8px;font-size:12.5px">Vacío</div>`}
+      ${total > cap ? `<button class="more" data-act="verHechas">Ver las ${total} hechas</button>` : ""}</div>`;
+  }).join("");
+  return `<section class="view" style="gap:12px">
+    <div class="sec-h" style="margin:0"><h2>Tareas</h2><p>${canWrite ? "Arrastra una tarjeta para cambiarla de columna, o tócala para editarla." : "Toca una tarjeta para ver su detalle."}</p></div>
+    <div class="toolbar">
+      <div class="seg" id="segF"><button data-f="todos" class="${filt.frente === "todos" ? "on" : ""}">Todos</button>${S.frentes.sort(byOrden).map((f) => `<button data-f="${esc(f.id)}" class="${filt.frente === f.id ? "on" : ""}">${esc(f.nombre)}</button>`).join("")}</div>
+    </div>
+    <div class="toolbar">
+      <select class="inp" id="fResp" aria-label="Responsable"><option value="">Todos los responsables</option>${resps.map((r) => `<option ${filt.resp === r ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
+      <input class="inp" id="fQ" placeholder="Buscar tarea…" value="${esc(filt.q)}" style="flex:1;min-width:160px">
+    </div>
+    ${canWrite ? `<form class="card add" id="addForm">
+      <input class="inp" id="aTexto" placeholder="Nueva tarea (corta, qué se entrega)" required>
+      <select class="inp" id="aFrente" aria-label="Frente">${S.frentes.sort(byOrden).map((f) => `<option value="${esc(f.id)}" ${filt.frente === f.id ? "selected" : ""}>${esc(f.nombre)}</option>`).join("")}</select>
+      <input class="inp" id="aResp" list="dlPersonas" placeholder="Responsable">
+      <input class="inp" id="aFecha" type="date" aria-label="Fecha compromiso">
+      <button class="btn pri" type="submit">Agregar</button>
+    </form>` : ""}
+    <div class="kanban">${cols}</div>
+    ${personasDL()}
+  </section>`;
+}
+function personasDL() { return `<datalist id="dlPersonas">${S.personas.sort(byOrden).map((p) => `<option value="${esc(p.nombre)}">${esc(p.rol || "")}</option>`).join("")}</datalist>`; }
+function taskCard(t) {
+  return `<div class="tk" data-task="${esc(t.id)}" ${canWrite ? 'draggable="true"' : ""} role="button" tabindex="0">
+    <div class="top-r">${canWrite ? `<button class="chk ${t.estado === "hecha" ? "on" : ""}" data-done="${esc(t.id)}" aria-label="Marcar como hecha">✓</button>` : ""}<div class="tt">${esc(t.texto)}</div></div>
+    ${t.estado === "atorada" && t.motivo ? `<div class="motivo">${esc(t.motivo)}</div>` : ""}
+    <div class="mt">${filt.frente === "todos" ? `<span class="chip-f"><span class="fdot" style="background:${fcol(t.frente)}"></span>${esc(fname(t.frente))}</span>` : ""}${t.responsable ? `<span>${esc(t.responsable)}</span>` : ""}${t.fecha ? `<span class="dt mono${late(t) ? " late" : ""}">${fmt(t.fecha)}${late(t) ? " · vencida" : ""}</span>` : ""}${t.hecha_at ? `<span class="mono">✓ ${fmt(t.hecha_at)}</span>` : ""}</div>
+  </div>`;
+}
+
+// Semanas
+function vSemanas() {
+  const t = today(); const cur = monday(t);
+  const keys = new Set(S.semanas.map((s) => s.id)); keys.add(iso(cur));
+  const list = [...keys].sort().reverse();
+  const antes = S.tareas.filter((x) => x.estado === "hecha" && !x.hecha_at);
+  const porF = {}; antes.forEach((x) => { (porF[x.frente] = porF[x.frente] || []).push(x); });
+  return `<section class="view" style="gap:14px">
+    <div class="sec-h" style="margin:0"><h2>Avance por semana</h2><p>Cada viernes se cierra la semana y se manda el resumen a dirección.</p></div>
+    ${list.map((k) => semanaCard(k, k === iso(cur))).join("")}
+    <details class="card pad"><summary style="cursor:pointer"><b>Antes del tablero</b> <span class="muted">· ${antes.length} entregables terminados en Odoo entre marzo y noviembre</span></summary>
+      <div class="bf" style="margin-top:12px">${S.frentes.sort(byOrden).filter((f) => porF[f.id]).map((f) => `<div class="row"><b>${esc(f.nombre)} <span class="mono faint">${porF[f.id].length}</span></b><span class="muted">${porF[f.id].map((x) => esc(x.texto)).join(" · ")}</span></div>`).join("")}</div>
+    </details>
+  </section>`;
+}
+function semanaCard(k, isCur) {
+  const s = S.semanas.find((x) => x.id === k) || { id: k, inicio: k, resumen: "", logros: [], siguiente: [], cerrada: false };
+  const a = parse(k), b = addDays(a, 7);
+  const hechas = S.tareas.filter((x) => x.hecha_at && new Date(x.hecha_at) >= a && new Date(x.hecha_at) < b);
+  const movs = S.actividad.filter((x) => x.at && new Date(x.at) >= a && new Date(x.at) < b);
+  const nuevas = S.tareas.filter((x) => x.creada_at && x.cambio_por !== "claude" && new Date(x.creada_at) >= a && new Date(x.creada_at) < b);
+  const porF = {}; hechas.forEach((x) => { (porF[x.frente] = porF[x.frente] || []).push(x); });
+  const ed = canWrite;
+  return `<article class="card wk" data-week="${esc(k)}">
+    <div class="side">
+      <div class="eyebrow">${isCur ? "Esta semana" : s.cerrada ? "Cerrada" : "Abierta"}</div>
+      <div class="num">Semana ${weekNum(a)}</div>
+      <div class="muted">${fmt(k)} – ${fmtY(iso(addDays(a, 4)))}</div>
+      <div class="ministat"><span><b>${hechas.length}</b> terminadas</span><span><b>${movs.length}</b> movimientos</span>${nuevas.length ? `<span><b>${nuevas.length}</b> nuevas</span>` : ""}</div>
+      <button class="btn sm" data-copy="${esc(k)}">Copiar para correo</button>
+      ${ed && !s.cerrada ? `<button class="btn sm" data-close="${esc(k)}">Cerrar semana</button>` : ""}
+    </div>
+    <div class="body">
+      <div><h3>Resumen para dirección</h3>${ed ? `<textarea class="inp" id="res-${esc(k)}" data-wfield="resumen" data-wk="${esc(k)}" placeholder="Dos o tres frases: qué se logró, qué está atorado y qué sigue.">${esc(s.resumen)}</textarea>` : `<p style="margin:6px 0 0">${esc(s.resumen) || '<span class="faint">Sin resumen todavía.</span>'}</p>`}</div>
+      <div class="grid2">
+        <div><h3>Logros</h3>${listEd(k, "logros", s.logros, ed)}</div>
+        <div><h3>Compromisos para la siguiente semana</h3>${listEd(k, "siguiente", s.siguiente, ed)}</div>
+      </div>
+      ${hechas.length ? `<div><h3>Tareas terminadas en el tablero</h3><div class="bf" style="margin-top:8px">${Object.keys(porF).map((f) => `<div class="row"><b>${esc(fname(f))}</b><span class="muted">${porF[f].map((x) => esc(x.texto)).join(" · ")}</span></div>`).join("")}</div></div>` : ""}
+    </div>
+  </article>`;
+}
+function listEd(k, field, arr, ed) {
+  arr = arr || [];
+  if (!ed) return arr.length ? `<ul>${arr.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="faint" style="margin:6px 0 0">—</p>`;
+  return `<textarea class="inp" style="margin-top:6px" id="${field}-${esc(k)}" data-wfield="${field}" data-wk="${esc(k)}" placeholder="Uno por renglón">${esc(arr.join("\n"))}</textarea>`;
+}
+function semanaTexto(k) {
+  const s = S.semanas.find((x) => x.id === k) || {}; const a = parse(k), b = addDays(a, 7);
+  const hechas = S.tareas.filter((x) => x.hecha_at && new Date(x.hecha_at) >= a && new Date(x.hecha_at) < b);
+  const g = statsGlobal();
+  let out = `Implementación de Odoo · Semana ${weekNum(a)} (${fmt(k)} – ${fmtY(iso(addDays(a, 4)))})\n\n`;
+  if (s.resumen) out += s.resumen + "\n\n";
+  out += `Avance general: ${g.pct}% (${g.hecha} de ${g.total} tareas). Atoradas o vencidas: ${g.atorada + g.late}.\n\n`;
+  out += "Frentes:\n" + S.frentes.sort(byOrden).map((f) => { const c = statsFrente(f.id); return `- ${f.nombre}: ${SEM[f.semaforo] || ""}, ${c.pct}%${f.semaforo !== "verde" && f.motivo ? ". " + f.motivo : ""}`; }).join("\n") + "\n\n";
+  if ((s.logros || []).length) out += "Logros:\n" + s.logros.map((x) => "- " + x).join("\n") + "\n\n";
+  if (hechas.length) out += "Tareas terminadas:\n" + hechas.map((x) => `- ${fname(x.frente)}: ${x.texto}`).join("\n") + "\n\n";
+  if ((s.siguiente || []).length) out += "Siguiente semana:\n" + s.siguiente.map((x) => "- " + x).join("\n") + "\n\n";
+  out += "Indicadores:\n" + S.indicadores.sort(byOrden).map((i) => `- ${i.nombre}: ${num(i.valor)}${i.meta != null ? " (meta " + num(i.meta) + ")" : ""}`).join("\n");
+  return out;
+}
+
+// Procesos
+function vProcesos() {
+  const ps = S.procesos.sort(byOrden);
+  const enUso = ps.filter((p) => p.nivel >= 4).length;
+  return `<section>
+    <div class="sec-h"><h2>Procesos contables</h2><p><b class="mono">${enUso}</b> de ${ps.length} en uso. Regla acordada el 9-nov: ingresos los lleva Sofi y egresos, Contabilidad.</p></div>
+    <div class="card matriz"><table>
+      <thead><tr><th>Proceso</th><th>Responsable</th><th>Frecuencia</th><th>Madurez</th></tr></thead>
+      <tbody>${ps.map((p) => `<tr><td><b style="font-weight:500">${esc(p.nombre)}</b>${p.nota ? `<div class="faint" style="font-size:12px">${esc(p.nota)}</div>` : ""}</td><td class="muted">${esc(p.responsable)}</td><td class="muted">${esc(p.frecuencia)}</td>
+        <td><div class="steps">${NIVELES.map((n, i) => `<button ${canWrite ? "" : "disabled"} data-proc="${esc(p.id)}" data-nivel="${i + 1}" class="${p.nivel >= i + 1 ? "on" : ""}${p.nivel === i + 1 ? " cur" : ""}" title="${esc(n)}">${esc(n)}</button>`).join("")}</div></td></tr>`).join("")}</tbody>
+    </table></div>
+    <p class="muted" style="margin-top:10px">Madurez: diseñado (flujo definido) → probado (en el ambiente de pruebas) → capacitado (el responsable ya lo sabe hacer) → en uso (se hace en Odoo todos los días). Niveles iniciales según la junta del 9-nov; confírmalos con Contabilidad.</p>
+  </section>`;
+}
+
+// Decisiones
+function vDecisiones() {
+  const ds = S.decisiones.sort((a, b) => (a.estado === "decidida") - (b.estado === "decidida") || byOrden(a, b));
+  return `<section>
+    <div class="sec-h"><h2>Decisiones pendientes</h2><p>Lo que frena al proyecto si nadie lo decide.</p></div>
+    <div class="card dec"><div class="list">${ds.map((d) => `<button class="li" data-dec="${esc(d.id)}"><span class="pill ${d.estado === "decidida" ? "s-hecha" : "s-atorada"}">${d.estado === "decidida" ? "Decidida" : "Abierta"}</span><span class="tx"><b>${esc(d.texto)}</b><span>${d.respuesta ? esc(d.respuesta) : "Decide: " + esc(d.quien || "por asignar")}</span></span><span class="dt">${d.estado === "decidida" && d.cambio_at ? fmt(d.cambio_at) : ""}</span></button>`).join("")}</div></div>
+    ${canWrite ? `<form class="card add" id="decForm" style="grid-template-columns:minmax(0,1fr) 180px auto;margin-top:12px"><input class="inp" id="dTexto" placeholder="Nueva decisión por tomar" required><input class="inp" id="dQuien" list="dlPersonas" placeholder="Quién decide"><button class="btn pri">Agregar</button></form>${personasDL()}` : ""}
+  </section>`;
+}
+
+// Buzón para Claude
+let dict = null, dictOn = false, borrador = "";
+function vBuzon() {
+  const ns = S.notas.slice().sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+  const EN = { nueva: "Nueva", leida: "Leída por Claude", aplicada: "Aplicada" };
+  return `<section class="buzon">
+    <div class="card compose">
+      <h2>Nota para Claude</h2>
+      <p class="muted" style="margin:0">Escribe o dicta avances, respuestas a las preguntas, cambios de fechas o dudas. Claude las lee, actualiza el tablero y te contesta aquí.</p>
+      ${canWrite ? `<textarea class="inp" id="nTexto" placeholder="Ej.: Ya quedó la sesión con Lili. La carga de bancos la hace Sofi los lunes. Mover la conciliación de agosto al 5 de diciembre.">${esc(borrador)}</textarea>
+      <div class="parcial" id="nParcial" aria-live="polite"></div>
+      <div class="acc">
+        ${dict ? `<button class="mic${dictOn ? " on" : ""}" id="nMic" type="button"><span class="rec"></span>${dictOn ? "Detener dictado" : "Dictar"}</button>` : ""}
+        <select class="inp" id="nFrente" aria-label="Frente"><option value="">Sin frente</option>${S.frentes.sort(byOrden).map((f) => `<option value="${esc(f.id)}">${esc(f.nombre)}</option>`).join("")}</select>
+        <button class="btn pri" id="nEnviar" style="margin-left:auto">Enviar a Claude</button>
+      </div>` : `<p class="banner" style="margin:0">Para dejar una nota toca <b>Editar</b> arriba y elige quién eres.</p>`}
+    </div>
+    <div class="card">
+      <div class="pad sec-h" style="margin:0;border-bottom:1px solid var(--line)"><h3>Notas recibidas</h3><span class="faint">${ns.filter((x) => x.estado === "nueva").length} sin leer</span></div>
+      <div>${ns.length ? ns.map((n) => `<article class="nota">
+        <div class="cab">${avatar(n.por)}<b style="color:var(--fg)">${esc(who(n.por))}</b><span>${ago(n.at)}</span>${n.frente ? `<span class="chip-f"><span class="fdot" style="background:${fcol(n.frente)}"></span>${esc(fname(n.frente))}</span>` : ""}<span class="pill s-${esc(n.estado || "nueva")}" style="margin-left:auto">${EN[n.estado] || "Nueva"}</span></div>
+        <div class="cuerpo">${esc(n.texto)}</div>
+        ${n.respuesta ? `<div class="resp"><b>Claude${n.respondida_at ? " · " + ago(n.respondida_at) : ""}</b>${esc(n.respuesta)}</div>` : ""}
+      </article>`).join("") : `<div class="empty">Todavía no hay notas. La primera que escribas aparecerá aquí.</div>`}</div>
+    </div>
+  </section>`;
+}
+function bindBuzon() {
+  const tx = $("#nTexto"); if (!tx) return;
+  tx.oninput = () => { borrador = tx.value; };
+  const send = $("#nEnviar");
+  send.onclick = async () => {
+    const texto = tx.value.trim(); if (!texto) { tx.focus(); return; }
+    if (dictOn) { try { await dict.stop(); } catch {} }
+    send.disabled = true;
+    try {
+      await db.collection("notas").add({ texto, frente: $("#nFrente").value, por: meId || "", at: nowISO(), estado: "nueva", respuesta: "" });
+      borrador = ""; tx.value = ""; toast("Nota enviada a Claude");
+    } catch (e) { failed(e); }
+    send.disabled = false;
+  };
+  const mic = $("#nMic");
+  if (mic) mic.onclick = () => {
+    if (dictOn) { dict.stop().catch(() => {}); return; }
+    dict.start().catch((e) => { if (e && e.code === "not_granted") { toast("El navegador no dio permiso al micrófono"); } else if (e && e.code !== "dismissed") toast("No se pudo iniciar el dictado"); });
+  };
+}
+function speechDict() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) return null;
+  let rec = null; const hs = { p: [], f: [], s: [] };
+  const emit = (k, v) => hs[k].forEach((fn) => fn(v));
+  return {
+    start() { return new Promise((res, rej) => {
+      rec = new SR(); rec.lang = "es-MX"; rec.continuous = true; rec.interimResults = true;
+      rec.onstart = () => { emit("s", { state: "listening" }); res(); };
+      rec.onresult = (e) => { let interim = ""; for (let i = e.resultIndex; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) emit("f", { text: r[0].transcript.trim() }); else interim += r[0].transcript; } emit("p", { text: interim }); };
+      rec.onerror = (ev) => { if (ev.error === "not-allowed" || ev.error === "service-not-allowed") rej({ code: "not_granted" }); };
+      rec.onend = () => emit("s", { state: "idle" });
+      try { rec.start(); } catch (err) { rej({ code: "unavailable" }); }
+    }); },
+    stop() { try { rec && rec.stop(); } catch {} return Promise.resolve(); },
+    onPartial(fn) { hs.p.push(fn); }, onFinal(fn) { hs.f.push(fn); }, onState(fn) { hs.s.push(fn); },
+  };
+}
+function initDictado() {
+  const d = speechDict(); if (!d) return;
+  dict = d;
+  d.onPartial(({ text }) => { const p = $("#nParcial"); if (p) p.textContent = text; });
+  d.onFinal(({ text }) => { const t = $("#nTexto"); borrador = ((t ? t.value : borrador) + (borrador && !/\s$/.test(borrador) ? " " : "") + text).trimStart(); if (t) { t.value = borrador; t.scrollTop = t.scrollHeight; } const p = $("#nParcial"); if (p) p.textContent = ""; });
+  d.onState(({ state }) => { const on = state === "listening" || state === "starting"; if (on !== dictOn) { dictOn = on; const m = $("#nMic"); if (m) { m.classList.toggle("on", on); m.innerHTML = `<span class="rec"></span>${on ? "Detener dictado" : "Dictar"}`; } } });
+}
+
+// Candado para ver
+function vCandado() {
+  return `<section class="card candado">
+    <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
+    <h2>Tablero privado</h2>
+    <p class="muted">Escribe la contraseña para ver el avance de la implementación.</p>
+    <form id="lockForm" class="lock-f">
+      <input class="inp" id="lockPass" type="password" autocomplete="current-password" placeholder="Contraseña para ver" aria-label="Contraseña para ver">
+      <label class="rec-l"><input type="checkbox" id="lockRec" checked> Recordar en este equipo</label>
+      <button class="btn pri">Entrar</button>
+      <p class="err" id="lockErr">${esc(lockError)}</p>
+    </form>
+  </section>`;
+}
+function bindCandado() {
+  const f = $("#lockForm"); if (!f) return; $("#lockPass").focus();
+  f.onsubmit = async (e) => {
+    e.preventDefault(); const pw = $("#lockPass").value; if (!pw) return;
+    const btn = f.querySelector("button"); btn.disabled = true; $("#lockErr").textContent = "";
+    try {
+      const r = await fetch(`acceso.json?t=${Date.now()}`, { cache: "no-store" });
+      if (!r.ok) throw { code: "sin_acceso" };
+      const dk = await unwrap(await r.json(), pw);
+      await setDK(b64u8(dk), $("#lockRec").checked);
+      lockError = ""; await cargar(); render();
+    } catch (er) { $("#lockErr").textContent = er.code === "pass" ? "Contraseña incorrecta." : er.code === "sin_acceso" ? "El tablero todavía no tiene contraseña configurada." : "No se pudo abrir. Revisa tu conexión."; btn.disabled = false; }
+  };
+}
+function cerrarCandado() { DK = null; RAW = null; loaded.clear(); try { localStorage.removeItem("dk-odoo"); sessionStorage.removeItem("dk-odoo"); } catch {} salirEdicion(); }
+
+// ---------- Paneles ----------
+function openDrawer(title, body, footer) {
+  $("#layer").innerHTML = `<div class="scrim" data-close-d></div><aside class="drawer" role="dialog" aria-label="${esc(title)}"><header><h2 style="font-size:17px">${esc(title)}</h2><button class="x" data-close-d aria-label="Cerrar">×</button></header><div class="bd">${body}</div><footer>${footer || ""}</footer></aside>`;
+  $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
+  const f = $("#layer .bd .inp"); if (f) f.focus();
+}
+function closeDrawer() { $("#layer").innerHTML = ""; }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
+
+function openTask(id) {
+  const t = S.tareas.find((x) => x.id === id); if (!t) return;
+  const ro = canWrite ? "" : "disabled";
+  const hist = S.actividad.filter((a) => a.tarea === id).sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+  openDrawer("Tarea", `
+    <div class="fld"><label for="tTexto">Tarea</label><input class="inp" id="tTexto" value="${esc(t.texto)}" ${ro}></div>
+    <div class="row2">
+      <div class="fld"><label for="tEstado">Estado</label><select class="inp" id="tEstado" ${ro}>${ESTADOS.map(([k, n]) => `<option value="${k}" ${t.estado === k ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+      <div class="fld"><label for="tFrente">Frente</label><select class="inp" id="tFrente" ${ro}>${S.frentes.sort(byOrden).map((f) => `<option value="${esc(f.id)}" ${t.frente === f.id ? "selected" : ""}>${esc(f.nombre)}</option>`).join("")}</select></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label for="tResp">Responsable</label><input class="inp" id="tResp" list="dlPersonas" value="${esc(t.responsable)}" ${ro}></div>
+      <div class="fld"><label for="tFecha">Fecha compromiso</label><input class="inp" id="tFecha" type="date" value="${esc((t.fecha || "").slice(0, 10))}" ${ro}></div>
+    </div>
+    <div class="fld" id="wrapMotivo" ${t.estado === "atorada" ? "" : "hidden"}><label for="tMotivo">¿Por qué está atorada? ¿Qué o a quién espera?</label><textarea class="inp" id="tMotivo" ${ro}>${esc(t.motivo)}</textarea></div>
+    <div class="fld"><label for="tNota">Notas</label><textarea class="inp" id="tNota" ${ro}>${esc(t.nota)}</textarea></div>
+    <div class="hist"><span>Origen: ${esc(t.origen || "Tablero")}${t.hecha_at ? " · terminada el " + fmtY(t.hecha_at) : ""}</span>${hist.slice(0, 6).map((a) => `<span>${esc(who(a.por))} · ${esc(a.texto)} · ${ago(a.at)}</span>`).join("")}</div>
+    ${personasDL()}`,
+    canWrite ? `<button class="btn" id="tDel">Borrar</button><span style="display:flex;gap:8px"><button class="btn" data-close-d>Cancelar</button><button class="btn pri" id="tSave">Guardar</button></span>` : `<span></span><button class="btn" data-close-d>Cerrar</button>`);
+  $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
+  if (!canWrite) return;
+  $("#tEstado").onchange = (e) => { $("#wrapMotivo").hidden = e.target.value !== "atorada"; };
+  $("#tSave").onclick = async () => {
+    const patch = { texto: $("#tTexto").value.trim() || t.texto, estado: $("#tEstado").value, frente: $("#tFrente").value, responsable: $("#tResp").value.trim(), fecha: $("#tFecha").value, motivo: $("#tMotivo").value.trim(), nota: $("#tNota").value.trim() };
+    closeDrawer(); await saveTask(t, patch);
+  };
+  let armed = false;
+  $("#tDel").onclick = async (e) => { if (!armed) { armed = true; e.target.textContent = "¿Seguro? Toca otra vez"; return; } closeDrawer(); await removeTask(t); };
+}
+
+function openFrente(fid) {
+  const f = frenteDe(fid); if (!f) return;
+  if (!canWrite) { filt.frente = fid; location.hash = "tareas"; return; }
+  openDrawer(f.nombre, `
+    <div class="fld"><label for="fSem">Semáforo</label><select class="inp" id="fSem">${Object.entries(SEM).map(([k, n]) => `<option value="${k}" ${f.semaforo === k ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+    <div class="fld"><label for="fMot">Qué lo frena o lo pone en riesgo</label><textarea class="inp" id="fMot">${esc(f.motivo)}</textarea></div>
+    <div class="row2"><div class="fld"><label for="fLid">Líder</label><input class="inp" id="fLid" list="dlPersonas" value="${esc(f.lider)}"></div><div class="fld"><label for="fEq">Equipo</label><input class="inp" id="fEq" value="${esc(f.equipo)}"></div></div>
+    <div class="fld"><label for="fMeta">Meta del frente</label><textarea class="inp" id="fMeta">${esc(f.meta)}</textarea></div>
+    ${personasDL()}`,
+    `<button class="btn" id="fVer">Ver tareas</button><span style="display:flex;gap:8px"><button class="btn" data-close-d>Cancelar</button><button class="btn pri" id="fSave">Guardar</button></span>`);
+  $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
+  $("#fVer").onclick = () => { closeDrawer(); filt.frente = fid; location.hash = "tareas"; };
+  $("#fSave").onclick = async () => {
+    const patch = { semaforo: $("#fSem").value, motivo: $("#fMot").value.trim(), lider: $("#fLid").value.trim(), equipo: $("#fEq").value.trim(), meta: $("#fMeta").value.trim() };
+    closeDrawer();
+    await write(`frentes/${fid}`, patch, f.semaforo !== patch.semaforo ? `${f.nombre}: semáforo a ${SEM[patch.semaforo]}` : `${f.nombre}: datos del frente`, fid);
+  };
+}
+
+function openEtapa(id) {
+  const e = S.etapas.find((x) => x.id === id); if (!e || !canWrite) return;
+  openDrawer("Etapa", `
+    <div class="fld"><label for="eNom">Etapa</label><input class="inp" id="eNom" value="${esc(e.nombre)}"></div>
+    <div class="row2"><div class="fld"><label for="eIni">Inicio</label><input class="inp" type="date" id="eIni" value="${esc(e.inicio)}"></div><div class="fld"><label for="eFin">Fin (compromiso)</label><input class="inp" type="date" id="eFin" value="${esc(e.fin)}"></div></div>
+    <div class="row2"><div class="fld"><label for="eEst">Estado</label><select class="inp" id="eEst">${[["pendiente", "Por hacer"], ["en_curso", "En curso"], ["hecha", "Hecha"]].map(([k, n]) => `<option value="${k}" ${e.estado === k ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+    <div class="fld"><label for="eConf">Fecha</label><select class="inp" id="eConf"><option value="1" ${e.confirmada ? "selected" : ""}>Confirmada</option><option value="0" ${e.confirmada ? "" : "selected"}>Por confirmar</option></select></div></div>
+    <p class="faint" style="margin:0;font-size:12px">Fuente: ${esc(e.fuente || "")}</p>`,
+    `<span></span><span style="display:flex;gap:8px"><button class="btn" data-close-d>Cancelar</button><button class="btn pri" id="eSave">Guardar</button></span>`);
+  $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
+  $("#eSave").onclick = async () => {
+    const patch = { nombre: $("#eNom").value.trim() || e.nombre, inicio: $("#eIni").value, fin: $("#eFin").value, estado: $("#eEst").value, confirmada: $("#eConf").value === "1" };
+    closeDrawer();
+    const msg = patch.fin !== e.fin ? `Etapa «${patch.nombre}»: fin ${fmt(e.fin)} → ${fmt(patch.fin)}` : `Etapa «${patch.nombre}» actualizada`;
+    await write(`etapas/${id}`, patch, msg, e.frente);
+  };
+}
+
+function openKpi(id) {
+  const k = S.indicadores.find((x) => x.id === id); if (!k) return;
+  const h = (k.historial || []).slice().sort((a, b) => b.fecha.localeCompare(a.fecha));
+  openDrawer(k.nombre, `
+    <div class="row2"><div class="fld"><label for="kVal">Valor nuevo</label><input class="inp mono" id="kVal" type="number" value="${esc(k.valor)}"></div><div class="fld"><label for="kFecha">Fecha del dato</label><input class="inp" id="kFecha" type="date" value="${iso(today())}"></div></div>
+    <div class="fld"><label for="kFuente">De dónde sale</label><input class="inp" id="kFuente" value="${esc(k.fuente)}"></div>
+    <div class="hist"><b style="color:var(--fg)">Historial</b>${h.map((x) => `<span class="mono">${fmtY(x.fecha)} · ${num(x.valor)}</span>`).join("")}</div>`,
+    `<span></span><span style="display:flex;gap:8px"><button class="btn" data-close-d>Cancelar</button><button class="btn pri" id="kSave">Guardar</button></span>`);
+  $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
+  $("#kSave").onclick = async () => {
+    const v = Number($("#kVal").value); if (!isFinite(v)) return;
+    const fecha = $("#kFecha").value || iso(today());
+    const hist = (k.historial || []).filter((x) => x.fecha !== fecha).concat([{ fecha, valor: v }]).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    const last = hist[hist.length - 1];
+    closeDrawer();
+    await write(`indicadores/${id}`, { valor: last.valor, historial: hist, fuente: $("#kFuente").value.trim(), actualizado: last.fecha }, `${k.nombre}: ${num(k.valor)} → ${num(v)}`, k.frente);
+  };
+}
+
+function openDec(id) {
+  const d = S.decisiones.find((x) => x.id === id); if (!d || !canWrite) return;
+  openDrawer("Decisión", `
+    <div class="fld"><label for="dT">Qué hay que decidir</label><textarea class="inp" id="dT">${esc(d.texto)}</textarea></div>
+    <div class="row2"><div class="fld"><label for="dQ">Quién decide</label><input class="inp" id="dQ" list="dlPersonas" value="${esc(d.quien)}"></div><div class="fld"><label for="dE">Estado</label><select class="inp" id="dE"><option value="abierta" ${d.estado !== "decidida" ? "selected" : ""}>Abierta</option><option value="decidida" ${d.estado === "decidida" ? "selected" : ""}>Decidida</option></select></div></div>
+    <div class="fld"><label for="dR">Qué se decidió</label><textarea class="inp" id="dR">${esc(d.respuesta)}</textarea></div>${personasDL()}`,
+    `<span></span><span style="display:flex;gap:8px"><button class="btn" data-close-d>Cancelar</button><button class="btn pri" id="dSave">Guardar</button></span>`);
+  $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
+  $("#dSave").onclick = async () => {
+    const patch = { texto: $("#dT").value.trim() || d.texto, quien: $("#dQ").value.trim(), estado: $("#dE").value, respuesta: $("#dR").value.trim() };
+    closeDrawer();
+    await write(`decisiones/${id}`, patch, patch.estado === "decidida" && d.estado !== "decidida" ? `Decidido: ${patch.texto}` : `Decisión actualizada: ${patch.texto}`, "");
+  };
+}
+
+// ---------- Escritura ----------
+async function write(path, patch, msg, frente, tarea) {
+  try {
+    await db.doc(path).update({ ...patch, cambio_at: nowISO(), cambio_por: meId || "" });
+    if (msg) logAct(msg, frente, tarea);
+    toast("Guardado");
+  } catch (e) { failed(e); }
+}
+async function logAct(texto, frente, tarea) {
+  try { await db.collection("actividad").add({ texto, frente: frente || "", tarea: tarea || "", por: meId || "", at: nowISO() }); } catch (e) { /* el cambio ya se guardó */ }
+}
+function failed(e) {
+  if (e && e.code === "auth") { salirEdicion(); toast("La llave de edición ya no es válida. Pide a Juan Carlos que la renueve."); return; }
+  toast("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.");
+}
+async function saveTask(t, patch) {
+  if (patch.estado === "hecha" && t.estado !== "hecha") patch.hecha_at = nowISO();
+  if (patch.estado && patch.estado !== "hecha" && t.estado === "hecha") patch.hecha_at = "";
+  if (patch.estado && patch.estado !== "atorada" && !("motivo" in patch)) patch.motivo = t.motivo || "";
+  let msg = "";
+  if (patch.estado && patch.estado !== t.estado) msg = `${EST[patch.estado]}: ${patch.texto || t.texto}`;
+  else if (patch.fecha !== undefined && patch.fecha !== t.fecha) msg = `Nueva fecha (${fmt(patch.fecha) || "sin fecha"}): ${t.texto}`;
+  else if (patch.responsable !== undefined && patch.responsable !== t.responsable) msg = `Responsable ${patch.responsable || "sin asignar"}: ${t.texto}`;
+  else msg = `Editada: ${patch.texto || t.texto}`;
+  Object.assign(t, patch); render();
+  await write(`tareas/${t.id}`, patch, msg, patch.frente || t.frente, t.id);
+}
+async function removeTask(t) {
+  try { await db.doc(`tareas/${t.id}`).delete(); logAct(`Borrada: ${t.texto}`, t.frente, ""); toast("Tarea borrada"); } catch (e) { failed(e); }
+}
+async function addTask(texto, frente, responsable, fecha) {
+  const id = "t-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  const data = { texto, frente, responsable, fecha, estado: "pendiente", nota: "", motivo: "", origen: "Tablero", hecha_at: "", creada_at: nowISO(), cambio_at: nowISO(), cambio_por: meId || "", orden: Date.now() };
+  try { await db.doc(`tareas/${id}`).set(data); logAct(`Nueva tarea: ${texto}`, frente, id); toast("Tarea agregada"); } catch (e) { failed(e); }
+}
+let weekTimers = {};
+function saveWeekField(k, field, value) {
+  clearTimeout(weekTimers[k + field]);
+  weekTimers[k + field] = setTimeout(async () => {
+    const exists = S.semanas.find((s) => s.id === k);
+    const val = field === "resumen" ? value.trim() : value.split("\n").map((x) => x.trim()).filter(Boolean);
+    try {
+      if (exists) await db.doc(`semanas/${k}`).update({ [field]: val, cambio_at: nowISO(), cambio_por: meId || "" });
+      else await db.doc(`semanas/${k}`).set({ inicio: k, resumen: "", logros: [], siguiente: [], cerrada: false, [field]: val, cambio_at: nowISO(), cambio_por: meId || "" });
+      toast("Semana guardada");
+    } catch (e) { failed(e); }
+  }, 700);
+}
+
+// ---------- Eventos ----------
+function bindView() {
+  const main = $("#main");
+  if (view === "buzon") bindBuzon();
+  main.querySelectorAll("[data-frente]").forEach((el) => el.onclick = () => view === "resumen" && el.classList.contains("frente") ? openFrente(el.dataset.frente) : (filt.frente = el.dataset.frente, location.hash = "tareas"));
+  main.querySelectorAll("[data-task]").forEach((el) => {
+    el.onclick = (e) => { if (e.target.closest("[data-done]")) return; openTask(el.dataset.task); };
+    el.onkeydown = (e) => { if (e.key === "Enter" && e.target === el) openTask(el.dataset.task); };
+  });
+  main.querySelectorAll("[data-done]").forEach((el) => el.onclick = (e) => { e.stopPropagation(); const t = S.tareas.find((x) => x.id === el.dataset.done); if (t) saveTask(t, { estado: t.estado === "hecha" ? "en_curso" : "hecha" }); });
+  main.querySelectorAll("[data-kpi]").forEach((el) => el.onclick = () => openKpi(el.dataset.kpi));
+  main.querySelectorAll("[data-etapa]").forEach((el) => el.onclick = () => openEtapa(el.dataset.etapa));
+  main.querySelectorAll("[data-dec]").forEach((el) => el.onclick = () => openDec(el.dataset.dec));
+  main.querySelectorAll("[data-proc]").forEach((el) => el.onclick = async () => {
+    const p = S.procesos.find((x) => x.id === el.dataset.proc); const n = Number(el.dataset.nivel); const nv = p.nivel === n ? n - 1 : n;
+    p.nivel = nv; render(); await write(`procesos/${p.id}`, { nivel: nv }, `${p.nombre}: ${nv ? NIVELES[nv - 1].toLowerCase() : "sin avance"}`, "contabilidad");
+  });
+  const seg = $("#segF"); if (seg) seg.querySelectorAll("button").forEach((b) => b.onclick = () => { filt.frente = b.dataset.f; render(); });
+  const fr = $("#fResp"); if (fr) fr.onchange = () => { filt.resp = fr.value; render(); };
+  const fq = $("#fQ"); if (fq) fq.oninput = () => { filt.q = fq.value; const pos = fq.selectionStart; render(); const n = $("#fQ"); n.focus(); n.setSelectionRange(pos, pos); };
+  main.querySelectorAll('[data-act="verHechas"]').forEach((b) => b.onclick = () => { filt.verHechas = true; render(); });
+  const af = $("#addForm"); if (af) af.onsubmit = (e) => { e.preventDefault(); const tx = $("#aTexto").value.trim(); if (!tx) return; addTask(tx, $("#aFrente").value, $("#aResp").value.trim(), $("#aFecha").value); $("#aTexto").value = ""; };
+  const df = $("#decForm"); if (df) df.onsubmit = async (e) => { e.preventDefault(); const tx = $("#dTexto").value.trim(); if (!tx) return;
+    try { await db.doc("decisiones/d-" + Date.now().toString(36)).set({ texto: tx, quien: $("#dQuien").value.trim(), estado: "abierta", respuesta: "", orden: Date.now(), creada_at: nowISO(), cambio_at: nowISO(), cambio_por: meId || "" }); logAct(`Decisión por tomar: ${tx}`); toast("Agregada"); } catch (er) { failed(er); } };
+  main.querySelectorAll("[data-wfield]").forEach((el) => el.oninput = () => saveWeekField(el.dataset.wk, el.dataset.wfield, el.value));
+  main.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => {
+    const txt = semanaTexto(b.dataset.copy);
+    try { await navigator.clipboard.writeText(txt); toast("Resumen copiado. Pégalo en el correo."); }
+    catch { openDrawer("Resumen de la semana", `<textarea class="inp" style="min-height:60vh;font-size:12.5px" readonly>${esc(txt)}</textarea>`, `<span class="faint">Selecciona y copia el texto.</span><button class="btn" data-close-d>Cerrar</button>`); $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer); }
+  });
+  main.querySelectorAll("[data-close]").forEach((b) => b.onclick = async () => {
+    const k = b.dataset.close; const exists = S.semanas.find((s) => s.id === k);
+    const snap = S.indicadores.map((i) => ({ id: i.id, valor: i.valor }));
+    try {
+      if (exists) await db.doc(`semanas/${k}`).update({ cerrada: true, indicadores: snap, cambio_at: nowISO(), cambio_por: meId || "" });
+      else await db.doc(`semanas/${k}`).set({ inicio: k, resumen: "", logros: [], siguiente: [], cerrada: true, indicadores: snap, cambio_at: nowISO(), cambio_por: meId || "" });
+      logAct(`Semana ${weekNum(parse(k))} cerrada`); toast("Semana cerrada");
+    } catch (e) { failed(e); }
+  });
+  // Arrastrar y soltar
+  let dragId = null;
+  main.querySelectorAll('.tk[draggable="true"]').forEach((el) => {
+    el.ondragstart = (e) => { dragId = el.dataset.task; e.dataTransfer.effectAllowed = "move"; try { e.dataTransfer.setData("text/plain", dragId); } catch {} };
+  });
+  main.querySelectorAll(".col").forEach((c) => {
+    c.ondragover = (e) => { if (!dragId) return; e.preventDefault(); c.classList.add("drop"); };
+    c.ondragleave = () => c.classList.remove("drop");
+    c.ondrop = (e) => { e.preventDefault(); c.classList.remove("drop"); const t = S.tareas.find((x) => x.id === dragId); dragId = null;
+      if (t && t.estado !== c.dataset.col) { if (c.dataset.col === "atorada") { t.estado = "atorada"; openTask(t.id); } else saveTask(t, { estado: c.dataset.col }); } };
+  });
+}
+
+function route() { const h = (location.hash || "").replace("#", ""); view = ["resumen", "plan", "tareas", "semanas", "procesos", "decisiones", "buzon"].includes(h) ? h : "resumen"; closeDrawer(); render(); window.scrollTo(0, 0); }
+window.addEventListener("hashchange", route);
+
+// No redibuja mientras alguien escribe en la página; espera a que salga del campo.
+let renderPend = false;
+function safeRender() {
+  const a = document.activeElement;
+  if (a && $("#main").contains(a) && (a.tagName === "TEXTAREA" || (a.tagName === "INPUT" && a.id !== "fQ"))) {
+    if (!renderPend) { renderPend = true; a.addEventListener("blur", () => { renderPend = false; setTimeout(render, 0); }, { once: true }); }
+    return;
+  }
+  render();
+}
+
+// ---------- Almacenamiento en GitHub ----------
+const GH = { owner: "JuanArandaEstriba", repo: "odoo-priat-tablero", branch: "main", path: "data/tablero.enc.json" };
+const EDITORES = [
+  { id: "juan", nombre: "Juan Carlos", foto: "img/juan.jpg", color: "#2446a6" },
+  { id: "ivan", nombre: "Iván", foto: "img/ivan.jpg", color: "#0f8a7e" },
+  { id: "aaron", nombre: "Aarón", foto: "img/aaron.jpg", color: "#c2602a" },
+];
+let RAW = null, fileSha = null, token = null, editor = null, loadError = false, DK = null, lockError = "";
+// ---------- Cifrado (AES-GCM; la llave de datos se protege con PBKDF2) ----------
+const u8 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const b64u8 = (u) => { let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+async function pwKey(pw, salt, iter) { const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]); return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]); }
+async function unwrap(obj, pw) { const k = await pwKey(pw, u8(obj.salt), obj.iter); try { return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: u8(obj.iv) }, k, u8(obj.ct))); } catch { throw { code: "pass" }; } }
+async function setDK(rawB64, recordar) { DK = await crypto.subtle.importKey("raw", u8(rawB64), "AES-GCM", false, ["encrypt", "decrypt"]); try { (recordar ? localStorage : sessionStorage).setItem("dk-odoo", rawB64); } catch {} }
+async function decData(enc) { const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: u8(enc.iv) }, DK, u8(enc.ct)); return JSON.parse(new TextDecoder().decode(pt)); }
+async function encData(raw) { const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, DK, new TextEncoder().encode(JSON.stringify(raw)))); return { v: 1, iv: b64u8(iv), ct: b64u8(ct) }; }
+let pending = [], flushing = false, flushTimer = null;
+const API = `https://api.github.com/repos/${GH.owner}/${GH.repo}`;
+
+function avatar(id, lg) {
+  const e = EDITORES.find((x) => x.id === id); const nom = who(id);
+  const col = e ? e.color : (id === "claude" ? "var(--fg)" : "var(--faint)");
+  const ini = esc(initials(nom));
+  if (e && e.foto && fotosOk[e.id]) return `<img class="ava${lg ? " lg" : ""}" src="${esc(e.foto)}" alt="${esc(nom)}">`;
+  return `<span class="ava${lg ? " lg" : ""}" style="background:${col}" title="${esc(nom)}">${id === "claude" ? "C" : ini}</span>`;
+}
+const fotosOk = {};
+EDITORES.forEach((e) => { const i = new Image(); i.onload = () => { fotosOk[e.id] = true; safeRender(); renderQuien(); }; i.src = e.foto; });
+
+function b64encode(str) { const bytes = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(bin); }
+function b64decode(b64) { const bin = atob(b64.replace(/\s/g, "")); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
+function ghHeaders() { return { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }; }
+
+function applyState() {
+  COLS.forEach((c) => { S[c] = Object.entries((RAW && RAW[c]) || {}).map(([id, d]) => ({ id, ...d })); loaded.add(c); });
+}
+async function fetchAuth() {
+  const r = await fetch(`${API}/contents/${GH.path}?ref=${GH.branch}&t=${Date.now()}`, { headers: ghHeaders(), cache: "no-store" });
+  if (r.status === 401 || r.status === 403) throw { code: "auth" };
+  if (!r.ok) throw { code: "net" };
+  const j = await r.json();
+  let txt;
+  if (j.content) txt = b64decode(j.content);
+  else { const r2 = await fetch(`${API}/git/blobs/${j.sha}`, { headers: ghHeaders() }); txt = b64decode((await r2.json()).content); }
+  return { raw: await decData(JSON.parse(txt)), sha: j.sha };
+}
+async function cargar() {
+  if (pending.length || flushing || !DK) return;
+  try {
+    if (token) { const { raw, sha } = await fetchAuth(); RAW = raw; fileSha = sha; }
+    else { const r = await fetch(`${GH.path}?t=${Date.now()}`, { cache: "no-store" }); if (!r.ok) throw new Error(r.status); RAW = await decData(await r.json()); }
+    loadError = false; applyState(); safeRender();
+  } catch (e) {
+    if (e && e.code === "auth") { failed(e); return; }
+    if (!RAW) { loadError = true; render(); }
+  }
+}
+function applyOp(raw, o) {
+  raw[o.col] = raw[o.col] || {};
+  if (o.t === "delete") delete raw[o.col][o.id];
+  else if (o.t === "set") raw[o.col][o.id] = o.d;
+  else raw[o.col][o.id] = { ...(raw[o.col][o.id] || {}), ...o.d };
+}
+function enqueue(o) {
+  if (!token) return Promise.reject({ code: "readonly" });
+  RAW = RAW || {}; applyOp(RAW, o); applyState();
+  return new Promise((resolve, reject) => {
+    pending.push({ ...o, resolve, reject });
+    clearTimeout(flushTimer); flushTimer = setTimeout(flush, 900);
+  });
+}
+async function flush() {
+  if (flushing || !pending.length) return;
+  flushing = true; const ops = pending.splice(0);
+  const textos = ops.filter((o) => o.col === "actividad" && o.d && o.d.texto).map((o) => o.d.texto);
+  const msg = `${editor ? editor.nombre : "Tablero"}: ${textos.length ? textos.join(" · ").slice(0, 300) : "cambios en el tablero"}`;
+  try {
+    let ok = false;
+    for (let intento = 0; intento < 4 && !ok; intento++) {
+      const { raw, sha } = await fetchAuth();
+      ops.forEach((o) => applyOp(raw, o));
+      const acts = Object.entries(raw.actividad || {}).sort((a, b) => (b[1].at || "").localeCompare(a[1].at || ""));
+      if (acts.length > 800) raw.actividad = Object.fromEntries(acts.slice(0, 800));
+      raw.actualizado = nowISO();
+      const r = await fetch(`${API}/contents/${GH.path}`, { method: "PUT", headers: { ...ghHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg, content: b64encode(JSON.stringify(await encData(raw))), sha, branch: GH.branch,
+          author: { name: `${editor ? editor.nombre : "Tablero"} (tablero)`, email: "tablero-odoo@users.noreply.github.com" } }) });
+      if (r.ok) { const j = await r.json(); fileSha = j.content.sha; RAW = raw; ops.forEach((o) => applyOp(RAW, o)); ok = true; }
+      else if (r.status === 401 || r.status === 403) throw { code: "auth" };
+      else if (r.status !== 409 && r.status !== 422) throw { code: "net" };
+    }
+    if (!ok) throw { code: "net" };
+    applyState(); safeRender(); ops.forEach((o) => o.resolve());
+  } catch (e) { ops.forEach((o) => o.reject(e)); cargar(); }
+  flushing = false;
+  if (pending.length) flush();
+}
+const db = {
+  doc(path) { const [col, id] = path.split("/"); return {
+    update: (d) => enqueue({ t: "update", col, id, d }),
+    set: (d) => enqueue({ t: "set", col, id, d }),
+    delete: () => enqueue({ t: "delete", col, id }),
+  }; },
+  collection(col) { return { add: (d) => { const id = col.slice(0, 1) + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); return enqueue({ t: "set", col, id, d }).then(() => ({ id })); } }; },
+};
+
+// ---------- Edición con contraseña ----------
+async function descifrarLlave(pass) {
+  const r = await fetch(`llave.json?t=${Date.now()}`, { cache: "no-store" });
+  if (!r.ok) throw { code: "sin_llave" };
+  const k = await r.json();
+  const un = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: un(k.salt), iterations: k.iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  try { const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: un(k.iv) }, key, un(k.ct)); return JSON.parse(new TextDecoder().decode(pt)); }
+  catch { throw { code: "pass" }; }
+}
+function abrirEditar() {
+  let sel = (() => { try { return localStorage.getItem("editor-odoo") || ""; } catch { return ""; } })();
+  openDrawer("Entrar a editar", `
+    <p class="muted" style="margin:0">Elige quién eres. Todo lo que cambies quedará a tu nombre, con fecha y hora.</p>
+    <div class="quien-pick">${EDITORES.map((e) => `<button type="button" data-ed="${e.id}" class="${sel === e.id ? "on" : ""}">${avatar(e.id, true)}<span>${esc(e.nombre)}</span></button>`).join("")}</div>
+    <div class="fld"><label for="edPass">Contraseña de edición</label><input class="inp" id="edPass" type="password" autocomplete="current-password"></div>
+    <p class="err" id="edErr"></p>`,
+    `<span></span><span style="display:flex;gap:8px"><button class="btn" data-close-d>Cancelar</button><button class="btn pri" id="edOk">Entrar</button></span>`);
+  $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
+  $("#layer").querySelectorAll("[data-ed]").forEach((b) => b.onclick = () => { sel = b.dataset.ed; $("#layer").querySelectorAll("[data-ed]").forEach((x) => x.classList.toggle("on", x === b)); $("#edPass").focus(); });
+  const go = async () => {
+    const err = $("#edErr"); if (!sel) { err.textContent = "Elige quién eres."; return; }
+    const pass = $("#edPass").value; if (!pass) { err.textContent = "Escribe la contraseña."; return; }
+    $("#edOk").disabled = true; err.textContent = "";
+    try {
+      const ll = await descifrarLlave(pass); const tk = ll.tk;
+      if (!DK) await setDK(ll.dk, false);
+      const r = await fetch(API, { headers: { Authorization: `Bearer ${tk}`, Accept: "application/vnd.github+json" } });
+      if (!r.ok) throw { code: "auth" };
+      token = tk; editor = EDITORES.find((x) => x.id === sel); meId = editor.id; canWrite = true;
+      try { sessionStorage.setItem("tk-odoo", tk); localStorage.setItem("editor-odoo", sel); } catch {}
+      closeDrawer(); renderQuien(); toast(`Editando como ${editor.nombre}`); await cargar(); render();
+    } catch (e) {
+      err.textContent = e.code === "pass" ? "Contraseña incorrecta." : e.code === "sin_llave" ? "Todavía no se configura la llave de edición." : "La llave de edición no funciona. Hay que renovarla.";
+      $("#edOk").disabled = false;
+    }
+  };
+  $("#edOk").onclick = go;
+  $("#edPass").onkeydown = (e) => { if (e.key === "Enter") go(); };
+}
+function salirEdicion() {
+  token = null; editor = null; meId = null; canWrite = false;
+  try { sessionStorage.removeItem("tk-odoo"); } catch {}
+  renderQuien(); render();
+}
+function renderQuien() {
+  const q = $("#quien");
+  q.innerHTML = editor
+    ? `<span class="yo">${avatar(editor.id)}${esc(editor.nombre)}</span><button class="btn sm" id="btnSalir">Salir</button>`
+    : `<button class="btn sm pri" id="btnEditar">Editar</button>`;
+  const b1 = $("#btnEditar"); if (b1) b1.onclick = abrirEditar;
+  const b2 = $("#btnSalir"); if (b2) b2.onclick = salirEdicion;
+}
+
+// Estado completo en texto, para pegarlo en Claude
+function textoParaClaude() {
+  const g = statsGlobal(); const t = today();
+  let o = `# Tablero de implementación de Odoo · Grupo PRIAT\nCorte: ${fmtY(iso(t))}. Avance general: ${g.pct}% (${g.hecha} de ${g.total} tareas). Atoradas o vencidas: ${g.atorada + g.late}.\n\n`;
+  o += "## Indicadores\n" + S.indicadores.sort(byOrden).map((i) => `- ${i.nombre}: ${num(i.valor)}${i.meta != null ? ` (meta ${num(i.meta)})` : ""} · ${i.fuente}`).join("\n") + "\n\n";
+  S.frentes.sort(byOrden).forEach((f) => {
+    const c = statsFrente(f.id);
+    o += `## ${f.nombre} · ${SEM[f.semaforo] || ""} · ${c.pct}%\nLíder: ${f.lider || "—"}. Meta: ${f.meta || "—"}${f.motivo ? `\nRiesgo: ${f.motivo}` : ""}\n`;
+    o += "Etapas:\n" + S.etapas.filter((e) => e.frente === f.id).sort(byOrden).map((e) => `- ${e.nombre}: ${e.estado}, ${e.inicio} a ${e.fin}${e.confirmada ? "" : " (por confirmar)"}`).join("\n") + "\n";
+    const abiertas = S.tareas.filter((x) => x.frente === f.id && x.estado !== "hecha");
+    if (abiertas.length) o += "Tareas abiertas:\n" + abiertas.map((x) => `- [${EST[x.estado]}] ${x.texto}${x.responsable ? " · " + x.responsable : ""}${x.fecha ? " · " + x.fecha + (late(x) ? " (vencida)" : "") : ""}${x.motivo ? " · Motivo: " + x.motivo : ""}`).join("\n") + "\n";
+    o += "\n";
+  });
+  o += "## Decisiones pendientes\n" + S.decisiones.filter((d) => d.estado !== "decidida").map((d) => `- ${d.texto} (decide: ${d.quien || "—"})`).join("\n") + "\n";
+  return o;
+}
+
+// No redibuja mientras alguien escribe en la página; espera a que salga del campo.
+// Tema claro / oscuro / sistema (preferencia de quien ve, en su navegador)
+const TEMAS = ["", "light", "dark"], TN = { "": "Tema del sistema", light: "Tema claro", dark: "Tema oscuro" };
+function aplicaTema(t) { if (t) document.documentElement.setAttribute("data-theme", t); else document.documentElement.removeAttribute("data-theme"); $("#tema").title = TN[t]; $("#tema").textContent = t === "light" ? "☀" : t === "dark" ? "☾" : "◐"; }
+let tema = ""; try { tema = localStorage.getItem("tema-odoo") || ""; } catch {}
+if (tema) aplicaTema(tema); else $("#tema").title = TN[""];
+$("#tema").onclick = () => { tema = TEMAS[(TEMAS.indexOf(tema) + 1) % 3]; aplicaTema(tema); try { localStorage.setItem("tema-odoo", tema); } catch {} toast(TN[tema]); };
+async function boot() {
+  try { const dk = localStorage.getItem("dk-odoo") || sessionStorage.getItem("dk-odoo"); if (dk) await setDK(dk, !!localStorage.getItem("dk-odoo")); } catch {}
+  route(); renderQuien(); initDictado();
+  try { const tk = sessionStorage.getItem("tk-odoo"); const ed = localStorage.getItem("editor-odoo"); if (tk && ed) { token = tk; editor = EDITORES.find((x) => x.id === ed) || null; if (editor) { meId = editor.id; canWrite = true; } else token = null; } } catch {}
+  renderQuien();
+  await cargar();
+  setInterval(() => { if (document.visibilityState === "visible") cargar(); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") cargar(); });
+  $("#btnCerrar").onclick = () => { cerrarCandado(); render(); toast("Sesión cerrada en este equipo"); };
+  $("#paraClaude").onclick = async () => { if (!DK || !RAW) { toast("Primero escribe la contraseña para ver"); return; } const txt = textoParaClaude(); try { await navigator.clipboard.writeText(txt); toast("Copiado. Pégalo en Claude."); } catch { openDrawer("Para Claude", `<textarea class="inp" style="min-height:60vh;font-size:12.5px" readonly>${esc(txt)}</textarea>`, `<span class="faint">Selecciona y copia el texto.</span><button class="btn" data-close-d>Cerrar</button>`); $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer); } };
+}
+window.addEventListener("beforeunload", (e) => { if (pending.length || flushing) { e.preventDefault(); e.returnValue = ""; } });
+boot();
+})();
+</script>
+</body>
+</html>

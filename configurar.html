@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Configurar el tablero</title>
+<style>
+:root { --bg: #f3f4f6; --panel: #fff; --line: #e2e5ea; --fg: #141821; --muted: #5b6372; --accent: #2446a6; --rojo: #c2362b; --verde: #1d7f52; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0e1116; --panel: #161a21; --line: #272d37; --fg: #e8ebf0; --muted: #9ea6b4; --accent: #8ea8ff; --rojo: #f07d72; --verde: #5ccb92; color-scheme: dark; } }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 600px; margin: 32px auto; padding: 0 16px; display: grid; gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; }
+h1 { margin: 0; font-size: 22px; } h2 { margin: 0; font-size: 17px; }
+p, ol { margin: 0; color: var(--muted); }
+label { font-size: 13px; font-weight: 600; display: grid; gap: 6px; }
+input { font: inherit; padding: 9px 11px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .row { grid-template-columns: 1fr; } }
+button { font: inherit; font-weight: 600; padding: 10px 14px; border-radius: 9px; border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+button:disabled { opacity: .6; }
+.tabs { display: flex; gap: 8px; }
+.tabs button { background: var(--panel); color: var(--muted); border: 1px solid var(--line); }
+.tabs button.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.msg { min-height: 1.4em; font-weight: 500; }
+.ok { color: var(--verde); } .bad { color: var(--rojo); }
+code { font-size: 13px; }
+a.dl { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Configurar el tablero</h1>
+  <div class="card">
+    <p>Aquí se ponen las dos contraseñas (una para ver y otra para editar) y la llave de GitHub. Todo se cifra en tu navegador: ni las contraseñas ni la llave salen de aquí.</p>
+    <ol>
+      <li>En GitHub: Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li>
+      <li>Repository access: <b>Only select repositories</b> → <code>odoo-priat-tablero</code>.</li>
+      <li>Permissions → Repository → <b>Contents: Read and write</b>. Nada más. Expiración: la que prefieras.</li>
+    </ol>
+  </div>
+  <div class="tabs"><button class="on" data-m="nuevo" type="button">Primera vez</button><button data-m="renovar" type="button">Cambiar llave o contraseñas</button></div>
+
+  <form class="card" id="fNuevo">
+    <h2>Primera vez</h2>
+    <label>Token de GitHub<input id="nTk" type="password" autocomplete="off" required></label>
+    <div class="row"><label>Contraseña para ver<input id="nV1" type="password" autocomplete="new-password" required></label><label>Repítela<input id="nV2" type="password" autocomplete="new-password" required></label></div>
+    <div class="row"><label>Contraseña para editar<input id="nE1" type="password" autocomplete="new-password" required></label><label>Repítela<input id="nE2" type="password" autocomplete="new-password" required></label></div>
+    <label>Datos iniciales (archivo <code>tablero-gh/data/tablero.json</code> de tu Mac)<input id="nFile" type="file" accept=".json,application/json" required></label>
+    <button>Cifrar y guardar</button>
+    <p class="msg" id="nMsg"></p>
+  </form>
+
+  <form class="card" id="fRen" hidden>
+    <h2>Cambiar llave o contraseñas</h2>
+    <label>Contraseña para editar actual<input id="rE0" type="password" autocomplete="current-password" required></label>
+    <label>Token nuevo de GitHub (déjalo vacío para conservar el actual)<input id="rTk" type="password" autocomplete="off"></label>
+    <div class="row"><label>Nueva contraseña para ver (opcional)<input id="rV1" type="password" autocomplete="new-password"></label><label>Repítela<input id="rV2" type="password" autocomplete="new-password"></label></div>
+    <div class="row"><label>Nueva contraseña para editar (opcional)<input id="rE1" type="password" autocomplete="new-password"></label><label>Repítela<input id="rE2" type="password" autocomplete="new-password"></label></div>
+    <button>Guardar cambios</button>
+    <p class="msg" id="rMsg"></p>
+  </form>
+
+  <div class="card" id="cClaude" hidden>
+    <h2>Llave de datos para Claude</h2>
+    <p>Para que Claude lea el buzón y actualice el tablero desde tu Mac, descarga este archivo y déjalo en tu carpeta Descargas. Claude lo guarda en un lugar privado de tu Mac y no lo sube a ningún lado.</p>
+    <a class="dl" id="dlClaude" download="llave-datos-tablero-odoo.txt" href="#">Descargar llave para Claude</a>
+  </div>
+</main>
+<script>
+const API = "https://api.github.com/repos/JuanArandaEstriba/odoo-priat-tablero";
+const ITER = 310000;
+const u8 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const b64 = (u) => { let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+const b64txt = (t) => b64(new TextEncoder().encode(t));
+const $ = (id) => document.getElementById(id);
+const say = (el, t, c) => { el.textContent = t; el.className = "msg " + (c || ""); };
+
+async function pwKey(pw, salt, iter, uso) { const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]); return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, [uso]); }
+async function wrap(bytes, pw) { const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)); const k = await pwKey(pw, salt, ITER, "encrypt"); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, bytes)); return { v: 1, iter: ITER, salt: b64(salt), iv: b64(iv), ct: b64(ct), creada: new Date().toISOString() }; }
+async function unwrap(obj, pw) { const k = await pwKey(pw, u8(obj.salt), obj.iter, "decrypt"); try { return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: u8(obj.iv) }, k, u8(obj.ct))); } catch { throw new Error("La contraseña para editar actual no es correcta."); } }
+async function encData(dkBytes, obj) { const key = await crypto.subtle.importKey("raw", dkBytes, "AES-GCM", false, ["encrypt"]); const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(obj)))); return { v: 1, iv: b64(iv), ct: b64(ct) }; }
+
+async function put(tk, path, contentObj, message) {
+  const h = { Authorization: `Bearer ${tk}`, Accept: "application/vnd.github+json" };
+  let sha; const g = await fetch(`${API}/contents/${path}?ref=main&t=${Date.now()}`, { headers: h, cache: "no-store" }); if (g.ok) sha = (await g.json()).sha;
+  const r = await fetch(`${API}/contents/${path}`, { method: "PUT", headers: { ...h, "Content-Type": "application/json" }, body: JSON.stringify({ message, content: b64txt(JSON.stringify(contentObj, null, 1)), sha, branch: "main" }) });
+  if (!r.ok) throw new Error(`GitHub no dejó guardar ${path}. Revisa que el token tenga Contents: Read and write.`);
+}
+async function checkToken(tk) { const r = await fetch(API, { headers: { Authorization: `Bearer ${tk}`, Accept: "application/vnd.github+json" } }); if (!r.ok) throw new Error("El token no abre el repositorio odoo-priat-tablero."); }
+function ofrecerLlave(dk) { $("dlClaude").href = "data:text/plain;base64," + b64txt(b64(dk)); $("cClaude").hidden = false; }
+
+document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
+  $("fNuevo").hidden = b.dataset.m !== "nuevo"; $("fRen").hidden = b.dataset.m !== "renovar";
+});
+
+$("fNuevo").onsubmit = async (e) => {
+  e.preventDefault(); const m = $("nMsg"), btn = e.target.querySelector("button");
+  const tk = $("nTk").value.trim(), v1 = $("nV1").value, v2 = $("nV2").value, e1 = $("nE1").value, e2 = $("nE2").value;
+  if (v1 !== v2 || e1 !== e2) return say(m, "Las contraseñas no coinciden.", "bad");
+  if (v1.length < 8 || e1.length < 8) return say(m, "Usa al menos 8 caracteres en cada contraseña.", "bad");
+  if (v1 === e1) return say(m, "Usa contraseñas distintas para ver y para editar.", "bad");
+  btn.disabled = true;
+  try {
+    say(m, "Leyendo el archivo de datos…");
+    const datos = JSON.parse(await $("nFile").files[0].text());
+    if (!datos.tareas || !datos.frentes) throw new Error("Ese archivo no parece el de datos del tablero.");
+    say(m, "Revisando el token…"); await checkToken(tk);
+    say(m, "Cifrando…");
+    const dk = crypto.getRandomValues(new Uint8Array(32));
+    const enc = await encData(dk, datos);
+    const acceso = await wrap(dk, v1);
+    const llave = await wrap(new TextEncoder().encode(JSON.stringify({ tk, dk: b64(dk) })), e1);
+    say(m, "Guardando en GitHub…");
+    await put(tk, "data/tablero.enc.json", enc, "Datos del tablero (cifrados)");
+    await put(tk, "acceso.json", acceso, "Acceso para ver (cifrado)");
+    await put(tk, "llave.json", llave, "Llave de edición (cifrada)");
+    $("nTk").value = ""; ofrecerLlave(dk);
+    say(m, "Listo. En uno o dos minutos el tablero ya pide contraseña y se puede editar.", "ok");
+  } catch (err) { say(m, err.message || "Algo falló. Inténtalo otra vez.", "bad"); }
+  btn.disabled = false;
+};
+
+$("fRen").onsubmit = async (e) => {
+  e.preventDefault(); const m = $("rMsg"), btn = e.target.querySelector("button");
+  const e0 = $("rE0").value, ntk = $("rTk").value.trim(), v1 = $("rV1").value, v2 = $("rV2").value, e1 = $("rE1").value, e2 = $("rE2").value;
+  if (v1 !== v2 || e1 !== e2) return say(m, "Las contraseñas nuevas no coinciden.", "bad");
+  if ((v1 && v1.length < 8) || (e1 && e1.length < 8)) return say(m, "Usa al menos 8 caracteres.", "bad");
+  btn.disabled = true;
+  try {
+    const r = await fetch(`llave.json?t=${Date.now()}`, { cache: "no-store" }); if (!r.ok) throw new Error("Todavía no hay llave. Usa Primera vez.");
+    const viejo = JSON.parse(new TextDecoder().decode(await unwrap(await r.json(), e0)));
+    const tk = ntk || viejo.tk; const dk = u8(viejo.dk);
+    await checkToken(tk);
+    const llave = await wrap(new TextEncoder().encode(JSON.stringify({ tk, dk: viejo.dk })), e1 || e0);
+    await put(tk, "llave.json", llave, "Llave de edición renovada (cifrada)");
+    if (v1) await put(tk, "acceso.json", await wrap(dk, v1), "Contraseña para ver cambiada (cifrada)");
+    $("rTk").value = ""; ofrecerLlave(dk);
+    say(m, "Listo. Los cambios aplican en uno o dos minutos.", "ok");
+  } catch (err) { say(m, err.message || "Algo falló. Inténtalo otra vez.", "bad"); }
+  btn.disabled = false;
+};
+</script>
+</body>
+</html>

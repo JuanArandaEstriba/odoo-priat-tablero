@@ -206,7 +206,7 @@ button.li:hover { background: var(--panel-2); }
 .btn.pri { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .btn.pri:hover { background: var(--accent-2); }
 .btn.sm { padding: 4px 9px; font-size: 12.5px; }
-.add { display: grid; grid-template-columns: minmax(0, 1fr) 170px 140px 140px auto; gap: 8px; padding: 10px; }
+.add { display: grid; grid-template-columns: minmax(0, 1fr) 170px 130px 170px 140px auto; gap: 8px; padding: 10px; }
 .kanban { display: grid; grid-template-columns: repeat(4, minmax(240px, 1fr)); gap: 12px; overflow-x: auto; align-items: start; }
 .col { background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 8px; display: grid; gap: 8px; min-height: 120px; align-content: start; }
 .col.drop { border-color: var(--accent); background: var(--accent-soft); }
@@ -290,6 +290,34 @@ button.li:hover { background: var(--panel-2); }
 .lock-f { display: grid; gap: 10px; width: 100%; }
 .rec-l { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; justify-content: center; }
 
+.chip-c { font-size: 11px; padding: 1px 7px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-weight: 500; white-space: nowrap; }
+.comps { display: grid; gap: 5px; padding: 8px 10px; background: var(--panel-2); border-radius: 10px; }
+.comp { display: grid; grid-template-columns: minmax(0, 1fr) 70px 36px; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+.comp .mini { height: 5px; background: var(--line); border-radius: 5px; overflow: hidden; }
+.comp .mini i { display: block; height: 100%; background: var(--verde); }
+.comp b { font-size: 11.5px; text-align: right; color: var(--fg); font-weight: 500; }
+/* Empresas */
+.emp-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.emp-sum div { background: var(--panel); padding: 14px; display: grid; gap: 2px; }
+.emp-sum b { font-family: var(--f-display); font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.emp-sum span { color: var(--muted); font-size: 12.5px; }
+.tabla { overflow-x: auto; }
+.tabla table { width: 100%; border-collapse: collapse; min-width: 720px; }
+.tabla th, .tabla td { padding: 9px 12px; border-top: 1px solid var(--line); font-size: 13px; text-align: left; white-space: nowrap; }
+.tabla th { border-top: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 600; }
+.tabla th button { all: unset; cursor: pointer; }
+.tabla th button.on { color: var(--fg); }
+.tabla td.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.tabla td.emp { white-space: normal; font-weight: 500; min-width: 220px; }
+.barra { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+.barra .t { flex: 1; height: 7px; background: var(--panel-2); border-radius: 6px; overflow: hidden; }
+.barra .t i { display: block; height: 100%; border-radius: 6px; }
+.barra b { font-family: var(--f-mono); font-size: 12px; font-weight: 500; min-width: 44px; text-align: right; }
+.e-Avanzado { background: var(--verde-soft); color: var(--verde); }
+.e-En { background: var(--azul-soft); color: var(--azul); }
+.e-Crítico { background: var(--rojo-soft); color: var(--rojo); }
+.e-Sin { background: var(--panel-2); color: var(--muted); }
+
 /* Panel lateral */
 .scrim { position: fixed; inset: 0; background: rgba(15,10,20,.35); z-index: 40; }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100%); background: var(--panel); z-index: 41; box-shadow: var(--sombra); display: grid; grid-template-rows: auto 1fr auto; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
@@ -340,6 +368,7 @@ button.li:hover { background: var(--panel-2); }
     <div class="quien"><button class="btn sm" id="paraClaude" title="Copia el estado completo del tablero en texto">Copiar para Claude</button><span id="quien"></span><button class="tema" id="tema" aria-label="Cambiar tema">◐</button></div>
     <nav class="tabs" id="tabs">
       <a href="#resumen" data-v="resumen">Resumen</a>
+      <a href="#empresas" data-v="empresas">Empresas</a>
       <a href="#plan" data-v="plan">Plan</a>
       <a href="#tareas" data-v="tareas">Tareas</a>
       <a href="#semanas" data-v="semanas">Semanas</a>
@@ -357,10 +386,10 @@ button.li:hover { background: var(--panel-2); }
 (() => {
 "use strict";
 // ---------- Estado ----------
-const S = { frentes: [], etapas: [], tareas: [], indicadores: [], procesos: [], decisiones: [], semanas: [], actividad: [], personas: [], notas: [] };
+const S = { frentes: [], etapas: [], tareas: [], indicadores: [], procesos: [], decisiones: [], semanas: [], actividad: [], personas: [], notas: [], empresas: [] };
 const COLS = Object.keys(S);
 let loaded = new Set(), canWrite = false, meId = null;
-let view = "resumen", filt = { frente: "todos", resp: "", q: "", verHechas: false };
+let view = "resumen", filt = { frente: "todos", comp: "", resp: "", q: "", verHechas: false }, fEmp = { estado: "", orden: "pendientes" };
 const names = {};
 
 const ESTADOS = [["pendiente", "Por hacer"], ["en_curso", "En curso"], ["atorada", "Atorada"], ["hecha", "Hecha"]];
@@ -392,6 +421,8 @@ const initials = (s) => (s || "?").split(/\s+/).map((w) => w[0]).slice(0, 2).joi
 const byOrden = (a, b) => (a.orden ?? 0) - (b.orden ?? 0);
 const frenteDe = (id) => S.frentes.find((f) => f.id === id);
 const fname = (id) => frenteDe(id)?.nombre || id;
+const COMPS = ["Contabilidad general", "Facturación y cobranza", "Bancos y conciliaciones", "Egresos y aprobaciones"];
+const compDe = (x) => x.frente === "contabilidad" ? (x.componente || "Contabilidad general") : "";
 const fcol = (id) => { const f = frenteDe(id); return `var(--f${((f?.orden ?? 8) % 10) + 1})`; };
 const ago = (s) => { if (!s) return ""; const m = Math.round((Date.now() - new Date(s)) / 6e4); if (m < 1) return "ahora"; if (m < 60) return `hace ${m} min`; const h = Math.round(m / 60); if (h < 24) return `hace ${h} h`; const d = Math.round(h / 24); return d === 1 ? "ayer" : `hace ${d} días`; };
 function toast(msg) { const el = document.createElement("div"); el.className = "toast"; el.textContent = msg; document.body.appendChild(el); setTimeout(() => el.remove(), 2400); }
@@ -439,7 +470,7 @@ function render() {
     main.innerHTML = `<div class="card empty">${loadError ? "No se pudo cargar el tablero. Revisa tu conexión y recarga la página." : "Cargando el tablero…"}</div>`;
     return;
   }
-  const fn = { resumen: vResumen, plan: vPlan, tareas: vTareas, semanas: vSemanas, procesos: vProcesos, decisiones: vDecisiones, buzon: vBuzon }[view] || vResumen;
+  const fn = { resumen: vResumen, plan: vPlan, tareas: vTareas, semanas: vSemanas, procesos: vProcesos, decisiones: vDecisiones, buzon: vBuzon, empresas: vEmpresas }[view] || vResumen;
   main.innerHTML = `<div class="view">${fn()}</div>`;
   bindView();
 }
@@ -540,6 +571,7 @@ function frenteCard(f) {
     <div class="t"><div><h3><span class="fdot" style="background:${fcol(f.id)}"></span>${esc(f.nombre)}</h3><div class="who">${esc(f.lider || "Sin líder")}${f.equipo ? " · " + esc(f.equipo) : ""}</div></div><span class="pill sem-${esc(f.semaforo || "verde")}">${SEM[f.semaforo] || "En tiempo"}</span></div>
     <div class="prog"><div class="track"><i style="width:${w(c.hecha)}%;background:var(--verde)"></i><i style="width:${w(c.en_curso)}%;background:var(--azul);opacity:.55"></i><i style="width:${w(c.atorada)}%;background:var(--rojo);opacity:.7"></i></div><b>${c.pct}%</b></div>
     <div class="counts"><span><b>${c.hecha}</b> hechas</span><span><b>${c.en_curso}</b> en curso</span><span><b>${c.pendiente}</b> por hacer</span>${c.atorada ? `<span style="color:var(--rojo)"><b style="color:var(--rojo)">${c.atorada}</b> atoradas</span>` : ""}${c.late ? `<span style="color:var(--rojo)"><b style="color:var(--rojo)">${c.late}</b> vencidas</span>` : ""}</div>
+    ${f.id === "contabilidad" ? `<div class="comps">${COMPS.map((cn) => { const ts = S.tareas.filter((x) => compDe(x) === cn); const h = ts.filter((x) => x.estado === "hecha").length; const p = ts.length ? Math.round(h / ts.length * 100) : 0; return `<div class="comp"><span>${esc(cn)}</span><span class="mini"><i style="width:${p}%"></i></span><b class="mono">${p}%</b></div>`; }).join("")}</div>` : ""}
     ${ne ? `<div class="next"><span>Siguiente etapa</span><b>${esc(ne.nombre)} · <span class="mono" style="color:${parse(ne.fin) < today() ? "var(--rojo)" : "var(--muted)"}">${fmt(ne.fin)}${ne.confirmada ? "" : " (por confirmar)"}</span></b></div>` : ""}
     ${f.motivo && f.semaforo !== "verde" ? `<div class="why ${esc(f.semaforo)}">${esc(f.motivo)}</div>` : ""}
   </button>`;
@@ -549,6 +581,40 @@ function liTask(x, dt, showWhy) {
   const col = { hecha: "var(--verde)", en_curso: "var(--azul)", atorada: "var(--rojo)", pendiente: "var(--faint)" }[x.estado];
   const sub = showWhy && x.motivo ? x.motivo : `${fname(x.frente)}${x.responsable ? " · " + x.responsable : ""}`;
   return `<button class="li" data-task="${esc(x.id)}"><span class="dot-s" style="background:${col}"></span><span class="tx"><b>${esc(x.texto)}</b><span>${esc(sub)}${showWhy && late(x) && x.estado !== "atorada" ? " · vencida" : ""}</span></span><span class="dt${late(x) ? " late" : ""}">${esc(dt || "")}</span></button>`;
+}
+
+// Empresas
+function vEmpresas() {
+  const es = S.empresas.slice();
+  const tot = es.reduce((a, e) => { a.c += e.cuentas || 0; a.m += e.movimientos || 0; a.k += e.conciliados || 0; a.p += e.pendientes || 0; return a; }, { c: 0, m: 0, k: 0, p: 0 });
+  const cuenta = (s) => es.filter((e) => e.estado === s).length;
+  let list = es.filter((e) => !fEmp.estado || e.estado === fEmp.estado);
+  const ord = { pendientes: (a, b) => (b.pendientes ?? -1) - (a.pendientes ?? -1), pct: (a, b) => (a.pct ?? 101) - (b.pct ?? 101), nombre: (a, b) => a.nombre.localeCompare(b.nombre), movimientos: (a, b) => (b.movimientos ?? 0) - (a.movimientos ?? 0) }[fEmp.orden];
+  list.sort(ord);
+  const col = (p) => p == null ? "var(--faint)" : p >= 75 ? "var(--verde)" : p < 25 ? "var(--rojo)" : "var(--azul)";
+  const fuente = es[0] ? es[0].fuente : "";
+  const th = (k, n, cls) => `<th class="${cls || ""}"><button data-ord="${k}" class="${fEmp.orden === k ? "on" : ""}">${n}${fEmp.orden === k ? " ↓" : ""}</button></th>`;
+  return `<section class="view" style="gap:14px">
+    <div class="sec-h" style="margin:0"><h2>Empresas y conciliación bancaria</h2><p>Fuente: ${esc(fuente)}. Solo lectura; Claude la actualiza con cada corte.</p></div>
+    <div class="emp-sum">
+      <div><b>${es.length}</b><span>empresas en Odoo</span></div>
+      <div><b>${num(tot.c)}</b><span>cuentas bancarias</span></div>
+      <div><b>${num(tot.m)}</b><span>movimientos</span></div>
+      <div><b>${tot.m ? (tot.k / tot.m * 100).toFixed(1) : 0}%</b><span>conciliado (${num(tot.k)})</span></div>
+      <div><b style="color:var(--rojo)">${num(tot.p)}</b><span>por conciliar</span></div>
+    </div>
+    <div class="toolbar"><div class="seg" id="segE">
+      <button data-e="" class="${!fEmp.estado ? "on" : ""}">Todas (${es.length})</button>
+      ${["Avanzado", "En proceso", "Crítico", "Sin movimientos"].map((s) => `<button data-e="${s}" class="${fEmp.estado === s ? "on" : ""}">${s} (${cuenta(s)})</button>`).join("")}
+    </div></div>
+    <div class="card tabla"><table>
+      <thead><tr>${th("nombre", "Empresa")}<th class="n">Cuentas</th>${th("movimientos", "Movimientos", "n")}<th class="n">Conciliados</th>${th("pendientes", "Por conciliar", "n")}${th("pct", "Avance")}<th>Estado</th></tr></thead>
+      <tbody>${list.map((e) => `<tr><td class="emp">${esc(e.nombre)}</td><td class="n">${num(e.cuentas)}</td><td class="n">${num(e.movimientos)}</td><td class="n">${num(e.conciliados)}</td><td class="n">${num(e.pendientes)}</td>
+        <td>${e.pct == null ? `<span class="faint">—</span>` : `<div class="barra"><span class="t"><i style="width:${Math.max(e.pct, 1.5)}%;background:${col(e.pct)}"></i></span><b>${e.pct.toFixed(1)}%</b></div>`}</td>
+        <td><span class="pill e-${esc((e.estado || "").split(" ")[0])}">${esc(e.estado)}</span></td></tr>`).join("")}</tbody>
+    </table></div>
+    <p class="muted" style="margin:0">Avanzado: 75% o más conciliado. Crítico: menos de 25%. Sin movimientos: la cuenta no tiene movimientos cargados.</p>
+  </section>`;
 }
 
 // Plan
@@ -573,7 +639,7 @@ function vPlan() {
       const cls = `${isLate ? "late" : e.estado}${e.confirmada ? "" : " prop"}${clip ? " clip" : ""}`;
       const bar = b <= start ? `<div class="bar-e ${cls}" style="left:0;width:auto;max-width:100%" title="${esc(e.nombre)}">← ${esc(fmt(e.fin))} · ${esc(e.nombre)}</div>`
         : `<div class="bar-e ${cls}" style="left:${l}%;width:max(${(r - l).toFixed(2)}%, 14px)" title="${esc(e.nombre)} · ${fmt(e.inicio)} → ${fmt(e.fin)}${e.confirmada ? "" : " (por confirmar)"}">${r - l > 9 ? esc(fmt(e.fin)) : ""}</div>`;
-      rows += `<div class="row"><div class="lbl" ${canWrite ? `data-etapa="${esc(e.id)}" style="cursor:pointer"` : ""}><span class="dot-s" style="margin:0;background:${isLate ? "var(--rojo)" : e.estado === "hecha" ? "var(--verde)" : e.estado === "en_curso" ? "var(--azul)" : "var(--faint)"}"></span><span title="${esc(e.nombre)}">${esc(e.nombre)}</span></div><div class="lane">${gl}${tpos >= 0 && tpos <= 100 ? `<div class="todayline" style="left:${tpos}%"></div>` : ""}${bar}</div></div>`;
+      rows += `<div class="row"><div class="lbl" ${canWrite ? `data-etapa="${esc(e.id)}" style="cursor:pointer"` : ""}><span class="dot-s" style="margin:0;background:${isLate ? "var(--rojo)" : e.estado === "hecha" ? "var(--verde)" : e.estado === "en_curso" ? "var(--azul)" : "var(--faint)"}"></span><span title="${esc((compDe(e) ? compDe(e) + " · " : "") + e.nombre)}">${compDe(e) ? `<em class="faint" style="font-style:normal">${esc(compDe(e).split(" ")[0])} · </em>` : ""}${esc(e.nombre)}</span></div><div class="lane">${gl}${tpos >= 0 && tpos <= 100 ? `<div class="todayline" style="left:${tpos}%"></div>` : ""}${bar}</div></div>`;
     });
   });
   return `<section>
@@ -591,7 +657,7 @@ function vPlan() {
 // Tareas
 function vTareas() {
   const resps = [...new Set(S.tareas.map((t) => t.responsable).filter(Boolean))].sort();
-  let ts = S.tareas.filter((t) => (filt.frente === "todos" || t.frente === filt.frente) && (!filt.resp || t.responsable === filt.resp) && (!filt.q || (t.texto + " " + (t.nota || "")).toLowerCase().includes(filt.q.toLowerCase())));
+  let ts = S.tareas.filter((t) => (filt.frente === "todos" || t.frente === filt.frente) && (!filt.comp || compDe(t) === filt.comp) && (!filt.resp || t.responsable === filt.resp) && (!filt.q || (t.texto + " " + (t.nota || "")).toLowerCase().includes(filt.q.toLowerCase())));
   const cols = ESTADOS.map(([k, n]) => {
     let items = ts.filter((t) => t.estado === k).sort((a, b) => (late(b) - late(a)) || (a.fecha || "9").localeCompare(b.fecha || "9") || byOrden(a, b));
     if (k === "hecha") items.sort((a, b) => (b.hecha_at || "").localeCompare(a.hecha_at || ""));
@@ -605,6 +671,7 @@ function vTareas() {
     <div class="toolbar">
       <div class="seg" id="segF"><button data-f="todos" class="${filt.frente === "todos" ? "on" : ""}">Todos</button>${S.frentes.sort(byOrden).map((f) => `<button data-f="${esc(f.id)}" class="${filt.frente === f.id ? "on" : ""}">${esc(f.nombre)}</button>`).join("")}</div>
     </div>
+    ${filt.frente === "contabilidad" ? `<div class="toolbar"><div class="seg" id="segC"><button data-c="" class="${filt.comp === "" ? "on" : ""}">Todo contabilidad</button>${COMPS.map((c) => `<button data-c="${esc(c)}" class="${filt.comp === c ? "on" : ""}">${esc(c)}</button>`).join("")}</div></div>` : ""}
     <div class="toolbar">
       <select class="inp" id="fResp" aria-label="Responsable"><option value="">Todos los responsables</option>${resps.map((r) => `<option ${filt.resp === r ? "selected" : ""}>${esc(r)}</option>`).join("")}</select>
       <input class="inp" id="fQ" placeholder="Buscar tarea…" value="${esc(filt.q)}" style="flex:1;min-width:160px">
@@ -613,6 +680,7 @@ function vTareas() {
       <input class="inp" id="aTexto" placeholder="Nueva tarea (corta, qué se entrega)" required>
       <select class="inp" id="aFrente" aria-label="Frente">${S.frentes.sort(byOrden).map((f) => `<option value="${esc(f.id)}" ${filt.frente === f.id ? "selected" : ""}>${esc(f.nombre)}</option>`).join("")}</select>
       <input class="inp" id="aResp" list="dlPersonas" placeholder="Responsable">
+      <select class="inp" id="aComp" aria-label="Parte de contabilidad" ${filt.frente === "contabilidad" || filt.frente === "todos" ? "" : "hidden"}>${COMPS.map((c) => `<option ${filt.comp === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
       <input class="inp" id="aFecha" type="date" aria-label="Fecha compromiso">
       <button class="btn pri" type="submit">Agregar</button>
     </form>` : ""}
@@ -625,7 +693,7 @@ function taskCard(t) {
   return `<div class="tk" data-task="${esc(t.id)}" ${canWrite ? 'draggable="true"' : ""} role="button" tabindex="0">
     <div class="top-r">${canWrite ? `<button class="chk ${t.estado === "hecha" ? "on" : ""}" data-done="${esc(t.id)}" aria-label="Marcar como hecha">✓</button>` : ""}<div class="tt">${esc(t.texto)}</div></div>
     ${t.estado === "atorada" && t.motivo ? `<div class="motivo">${esc(t.motivo)}</div>` : ""}
-    <div class="mt">${filt.frente === "todos" ? `<span class="chip-f"><span class="fdot" style="background:${fcol(t.frente)}"></span>${esc(fname(t.frente))}</span>` : ""}${t.responsable ? `<span>${esc(t.responsable)}</span>` : ""}${t.fecha ? `<span class="dt mono${late(t) ? " late" : ""}">${fmt(t.fecha)}${late(t) ? " · vencida" : ""}</span>` : ""}${t.hecha_at ? `<span class="mono">✓ ${fmt(t.hecha_at)}</span>` : ""}</div>
+    <div class="mt">${filt.frente === "todos" ? `<span class="chip-f"><span class="fdot" style="background:${fcol(t.frente)}"></span>${esc(fname(t.frente))}</span>` : ""}${compDe(t) && filt.comp === "" ? `<span class="chip-c">${esc(compDe(t))}</span>` : ""}${t.responsable ? `<span>${esc(t.responsable)}</span>` : ""}${t.fecha ? `<span class="dt mono${late(t) ? " late" : ""}">${fmt(t.fecha)}${late(t) ? " · vencida" : ""}</span>` : ""}${t.hecha_at ? `<span class="mono">✓ ${fmt(t.hecha_at)}</span>` : ""}</div>
   </div>`;
 }
 
@@ -837,6 +905,7 @@ function openTask(id) {
       <div class="fld"><label for="tEstado">Estado</label><select class="inp" id="tEstado" ${ro}>${ESTADOS.map(([k, n]) => `<option value="${k}" ${t.estado === k ? "selected" : ""}>${n}</option>`).join("")}</select></div>
       <div class="fld"><label for="tFrente">Frente</label><select class="inp" id="tFrente" ${ro}>${S.frentes.sort(byOrden).map((f) => `<option value="${esc(f.id)}" ${t.frente === f.id ? "selected" : ""}>${esc(f.nombre)}</option>`).join("")}</select></div>
     </div>
+    <div class="fld" id="wrapComp" ${t.frente === "contabilidad" ? "" : "hidden"}><label for="tComp">Parte de contabilidad</label><select class="inp" id="tComp" ${ro}>${COMPS.map((c) => `<option ${compDe(t) === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>
     <div class="row2">
       <div class="fld"><label for="tResp">Responsable</label><input class="inp" id="tResp" list="dlPersonas" value="${esc(t.responsable)}" ${ro}></div>
       <div class="fld"><label for="tFecha">Fecha compromiso</label><input class="inp" id="tFecha" type="date" value="${esc((t.fecha || "").slice(0, 10))}" ${ro}></div>
@@ -849,8 +918,9 @@ function openTask(id) {
   $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
   if (!canWrite) return;
   $("#tEstado").onchange = (e) => { $("#wrapMotivo").hidden = e.target.value !== "atorada"; };
+  $("#tFrente").onchange = (e) => { $("#wrapComp").hidden = e.target.value !== "contabilidad"; };
   $("#tSave").onclick = async () => {
-    const patch = { texto: $("#tTexto").value.trim() || t.texto, estado: $("#tEstado").value, frente: $("#tFrente").value, responsable: $("#tResp").value.trim(), fecha: $("#tFecha").value, motivo: $("#tMotivo").value.trim(), nota: $("#tNota").value.trim() };
+    const patch = { texto: $("#tTexto").value.trim() || t.texto, estado: $("#tEstado").value, frente: $("#tFrente").value, responsable: $("#tResp").value.trim(), fecha: $("#tFecha").value, motivo: $("#tMotivo").value.trim(), nota: $("#tNota").value.trim(), componente: $("#tFrente").value === "contabilidad" ? $("#tComp").value : "" };
     closeDrawer(); await saveTask(t, patch);
   };
   let armed = false;
@@ -959,9 +1029,9 @@ async function saveTask(t, patch) {
 async function removeTask(t) {
   try { await db.doc(`tareas/${t.id}`).delete(); logAct(`Borrada: ${t.texto}`, t.frente, ""); toast("Tarea borrada"); } catch (e) { failed(e); }
 }
-async function addTask(texto, frente, responsable, fecha) {
+async function addTask(texto, frente, responsable, fecha, componente) {
   const id = "t-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-  const data = { texto, frente, responsable, fecha, estado: "pendiente", nota: "", motivo: "", origen: "Tablero", hecha_at: "", creada_at: nowISO(), cambio_at: nowISO(), cambio_por: meId || "", orden: Date.now() };
+  const data = { texto, frente, componente: frente === "contabilidad" ? (componente || "Contabilidad general") : "", responsable, fecha, estado: "pendiente", nota: "", motivo: "", origen: "Tablero", hecha_at: "", creada_at: nowISO(), cambio_at: nowISO(), cambio_por: meId || "", orden: Date.now() };
   try { await db.doc(`tareas/${id}`).set(data); logAct(`Nueva tarea: ${texto}`, frente, id); toast("Tarea agregada"); } catch (e) { failed(e); }
 }
 let weekTimers = {};
@@ -995,11 +1065,14 @@ function bindView() {
     const p = S.procesos.find((x) => x.id === el.dataset.proc); const n = Number(el.dataset.nivel); const nv = p.nivel === n ? n - 1 : n;
     p.nivel = nv; render(); await write(`procesos/${p.id}`, { nivel: nv }, `${p.nombre}: ${nv ? NIVELES[nv - 1].toLowerCase() : "sin avance"}`, "contabilidad");
   });
-  const seg = $("#segF"); if (seg) seg.querySelectorAll("button").forEach((b) => b.onclick = () => { filt.frente = b.dataset.f; render(); });
+  const segE = $("#segE"); if (segE) segE.querySelectorAll("button").forEach((b) => b.onclick = () => { fEmp.estado = b.dataset.e; render(); });
+  main.querySelectorAll("[data-ord]").forEach((b) => b.onclick = () => { fEmp.orden = b.dataset.ord; render(); });
+  const seg = $("#segF"); if (seg) seg.querySelectorAll("button").forEach((b) => b.onclick = () => { filt.frente = b.dataset.f; filt.comp = ""; render(); });
+  const segC = $("#segC"); if (segC) segC.querySelectorAll("button").forEach((b) => b.onclick = () => { filt.comp = b.dataset.c; render(); });
   const fr = $("#fResp"); if (fr) fr.onchange = () => { filt.resp = fr.value; render(); };
   const fq = $("#fQ"); if (fq) fq.oninput = () => { filt.q = fq.value; const pos = fq.selectionStart; render(); const n = $("#fQ"); n.focus(); n.setSelectionRange(pos, pos); };
   main.querySelectorAll('[data-act="verHechas"]').forEach((b) => b.onclick = () => { filt.verHechas = true; render(); });
-  const af = $("#addForm"); if (af) af.onsubmit = (e) => { e.preventDefault(); const tx = $("#aTexto").value.trim(); if (!tx) return; addTask(tx, $("#aFrente").value, $("#aResp").value.trim(), $("#aFecha").value); $("#aTexto").value = ""; };
+  const af = $("#addForm"); if (af) af.onsubmit = (e) => { e.preventDefault(); const tx = $("#aTexto").value.trim(); if (!tx) return; addTask(tx, $("#aFrente").value, $("#aResp").value.trim(), $("#aFecha").value, $("#aComp").value); $("#aTexto").value = ""; };
   const df = $("#decForm"); if (df) df.onsubmit = async (e) => { e.preventDefault(); const tx = $("#dTexto").value.trim(); if (!tx) return;
     try { await db.doc("decisiones/d-" + Date.now().toString(36)).set({ texto: tx, quien: $("#dQuien").value.trim(), estado: "abierta", respuesta: "", orden: Date.now(), creada_at: nowISO(), cambio_at: nowISO(), cambio_por: meId || "" }); logAct(`Decisión por tomar: ${tx}`); toast("Agregada"); } catch (er) { failed(er); } };
   main.querySelectorAll("[data-wfield]").forEach((el) => el.oninput = () => saveWeekField(el.dataset.wk, el.dataset.wfield, el.value));
@@ -1030,7 +1103,7 @@ function bindView() {
   });
 }
 
-function route() { const h = (location.hash || "").replace("#", ""); view = ["resumen", "plan", "tareas", "semanas", "procesos", "decisiones", "buzon"].includes(h) ? h : "resumen"; closeDrawer(); render(); window.scrollTo(0, 0); }
+function route() { const h = (location.hash || "").replace("#", ""); view = ["resumen", "empresas", "plan", "tareas", "semanas", "procesos", "decisiones", "buzon"].includes(h) ? h : "resumen"; closeDrawer(); render(); window.scrollTo(0, 0); }
 window.addEventListener("hashchange", route);
 
 // No redibuja mientras alguien escribe en la página; espera a que salga del campo.
@@ -1219,6 +1292,7 @@ function textoParaClaude() {
     if (abiertas.length) o += "Tareas abiertas:\n" + abiertas.map((x) => `- [${EST[x.estado]}] ${x.texto}${x.responsable ? " · " + x.responsable : ""}${x.fecha ? " · " + x.fecha + (late(x) ? " (vencida)" : "") : ""}${x.motivo ? " · Motivo: " + x.motivo : ""}`).join("\n") + "\n";
     o += "\n";
   });
+  o += "## Empresas (conciliación bancaria)\n" + S.empresas.slice().sort((a, b) => (b.pendientes ?? 0) - (a.pendientes ?? 0)).map((e) => `- ${e.nombre}: ${e.pct == null ? "sin movimientos" : e.pct + "% conciliado, " + num(e.pendientes) + " por conciliar"}`).join("\n") + "\n\n";
   o += "## Decisiones pendientes\n" + S.decisiones.filter((d) => d.estado !== "decidida").map((d) => `- ${d.texto} (decide: ${d.quien || "—"})`).join("\n") + "\n";
   return o;
 }

@@ -144,8 +144,7 @@ h3 { font-size: 13px; font-weight: 600; margin: 0; letter-spacing: .02em; }
 .frente .next { font-size: 12.5px; display: grid; gap: 2px; }
 .frente .next span { color: var(--muted); }
 .frente .why { font-size: 12.5px; color: var(--muted); border-left: 2px solid var(--line-2); padding-left: 8px; }
-.frente .why.rojo { border-color: var(--rojo); }
-.frente .why.ambar { border-color: var(--ambar); }
+.frente .why { border-color: var(--accent); }
 .frente .counts { display: flex; gap: 12px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
 .frente .counts b { font-family: var(--f-mono); font-weight: 500; color: var(--fg); }
 
@@ -315,7 +314,7 @@ button.li:hover { background: var(--panel-2); }
 .barra b { font-family: var(--f-mono); font-size: 12px; font-weight: 500; min-width: 44px; text-align: right; }
 .e-Avanzado { background: var(--verde-soft); color: var(--verde); }
 .e-En { background: var(--azul-soft); color: var(--azul); }
-.e-Crítico { background: var(--rojo-soft); color: var(--rojo); }
+.e-Por { background: var(--ambar-soft); color: var(--ambar); }
 .e-Sin { background: var(--panel-2); color: var(--muted); }
 
 /* Resumen simple */
@@ -342,6 +341,54 @@ button.li:hover { background: var(--panel-2); }
 .logro .ok { width: 20px; height: 20px; border-radius: 50%; background: var(--verde-soft); color: var(--verde); display: grid; place-items: center; font-size: 12px; font-weight: 700; margin-top: 1px; }
 .logro b { display: block; font-weight: 500; }
 .logro span { font-size: 12px; color: var(--muted); }
+
+/* Camino y plan */
+.camino { padding: 20px; display: grid; gap: 18px; }
+.fases5 { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.fases5 li { position: relative; display: grid; gap: 2px; padding: 12px 12px 12px 46px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); min-width: 0; }
+.fases5 li .num { position: absolute; left: 12px; top: 12px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--line); color: var(--muted); }
+.fases5 li b { font-size: 13.5px; font-weight: 600; }
+.fases5 li span:not(.num) { font-size: 12px; color: var(--muted); }
+.fases5 li.hecha .num { background: var(--verde); color: #fff; }
+.fases5 li.hoy { background: var(--accent-soft); border-color: var(--accent); }
+.fases5 li.hoy .num { background: var(--accent); color: var(--on-accent); }
+.tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.col3 { border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; border: 1px solid var(--line); }
+.col3 h3 { font-family: var(--f-display); font-size: 16px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
+.col3 .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; }
+.col3.ya { background: var(--verde-soft); border-color: transparent; } .col3.ya .ic { background: var(--verde); color: #fff; }
+.col3.curso .ic { background: var(--azul-soft); color: var(--azul); }
+.col3.sig .ic { background: var(--panel-2); color: var(--muted); }
+.col3 ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.col3.ya li { padding-left: 18px; position: relative; font-weight: 500; }
+.col3.ya li::before { content: "✓"; position: absolute; left: 0; color: var(--verde); font-weight: 700; }
+.col3 li b { display: block; font-weight: 500; }
+.col3 li span { font-size: 12.5px; color: var(--muted); }
+.mini2 { display: block; height: 6px; background: var(--line); border-radius: 6px; overflow: hidden; margin: 5px 0 2px; }
+.mini2 i { display: block; height: 100%; background: var(--azul); }
+.kpi .exp { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.pr-alta { background: var(--accent-soft); color: var(--accent); }
+.pr-media { background: var(--panel-2); color: var(--muted); }
+.pr-ok { background: var(--verde-soft); color: var(--verde); }
+.mapa { overflow-x: auto; }
+.mapa table { border-collapse: collapse; width: 100%; min-width: 1050px; table-layout: fixed; }
+.mapa th, .mapa td { border-top: 1px solid var(--line); border-left: 1px solid var(--line); padding: 8px; vertical-align: top; text-align: left; }
+.mapa thead th { font-family: var(--f-display); font-size: 14px; font-weight: 650; border-top: 0; }
+.mapa th.fcol { width: 170px; border-left: 0; font-family: var(--f-display); font-size: 14px; font-weight: 650; }
+.mapa th.fcol .sub { display: block; font-family: var(--f-ui); font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 4px; }
+.mapa .hoy { background: var(--accent-soft); }
+.fase-row td { border-top: 0; padding-top: 0; }
+.fase-b { display: block; font-size: 11.5px; font-weight: 600; color: var(--accent); }
+.fase-b.prop { color: var(--muted); font-weight: 500; }
+.hito { display: grid; gap: 2px; width: 100%; text-align: left; border-radius: 8px; padding: 7px 9px; margin-bottom: 6px; border: 1px solid transparent; font-size: 12.5px; }
+.hito b { font-weight: 500; line-height: 1.3; }
+.hito span { font-size: 11.5px; opacity: .85; }
+.hito.hecha { background: var(--verde-soft); color: var(--verde); }
+.hito.en_curso { background: var(--azul-soft); color: var(--azul); }
+.hito.pendiente { background: var(--panel-2); color: var(--fg); border-color: var(--line-2); }
+.hito.prop { border-style: dashed; border-color: var(--muted); background: transparent; color: var(--muted); }
+button.hito { cursor: default; } button.hito[data-etapa] { cursor: pointer; }
+@media (max-width: 900px) { .fases5 { grid-template-columns: 1fr 1fr; } .tres { grid-template-columns: 1fr; } }
 
 /* Panel lateral */
 .scrim { position: fixed; inset: 0; background: rgba(15,10,20,.35); z-index: 40; }
@@ -419,7 +466,7 @@ const names = {};
 
 const ESTADOS = [["pendiente", "Por hacer"], ["en_curso", "En curso"], ["atorada", "Atorada"], ["hecha", "Hecha"]];
 const EST = Object.fromEntries(ESTADOS);
-const SEM = { verde: "En tiempo", ambar: "Con riesgo", rojo: "Atorado" };
+const SEM = { verde: "Funcionando", ambar: "Prioridad alta", rojo: "Prioridad alta" };
 const NIVELES = ["Diseñado", "Probado", "Capacitado", "En uso"];
 const FASES = [
   { n: "Pruebas", d: "nov 2026", ini: "2026-11-01", fin: "2026-11-30" },
@@ -505,51 +552,59 @@ function gaugeSVG(p) {
   return `<svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--panel-2)" stroke-width="8"/><circle cx="38" cy="38" r="${r}" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 38 38)"/></svg>`;
 }
 
+const FASES5 = [
+  { n: "Configuración", d: "mar–sep 2026", ini: "2026-03-01", fin: "2026-10-31" },
+  { n: "Operación diaria en Odoo", d: "nov 2026", ini: "2026-11-01", fin: "2026-11-30" },
+  { n: "Paralelo con Compac", d: "dic 2026", ini: "2026-12-01", fin: "2026-12-31" },
+  { n: "Odoo principal", d: "ene 2027", ini: "2027-01-01", fin: "2027-01-31" },
+  { n: "Estabilización", d: "feb–mar 2027 · propuesta", ini: "2027-02-01", fin: "2027-03-31" },
+];
 function vResumen() {
   const t = today();
-  const sem = S.semanas.slice().sort((a, b) => b.id.localeCompare(a.id)).find((s) => s.resumen);
   const fr = S.frentes.slice().sort(byOrden);
-  const pend = S.etapas.filter((e) => e.estado !== "hecha").sort((a, b) => a.fin.localeCompare(b.fin));
-  const meses = [];
-  pend.forEach((e) => { const d = parse(e.fin); const k = `${d.getFullYear()}-${d.getMonth()}`; let m = meses.find((x) => x.k === k); if (!m) { m = { k, n: `${["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][d.getMonth()]} ${d.getFullYear()}`, items: [] }; meses.push(m); } m.items.push(e); });
-  const frenos = fr.filter((f) => f.semaforo !== "verde" && f.motivo);
+  const funciona = S.logros.filter((g) => g.funciona).sort(byOrden);
+  const historia = S.logros.filter((g) => !g.funciona).sort(byOrden);
+  const enCurso = S.etapas.filter((e) => e.estado === "en_curso").sort((a, b) => a.fin.localeCompare(b.fin));
+  const sigue = S.etapas.filter((e) => e.estado === "pendiente").sort((a, b) => a.fin.localeCompare(b.fin)).slice(0, 6);
+  const conc = S.indicadores.find((i) => i.id === "conciliacion");
   const decAb = S.decisiones.filter((x) => x.estado !== "decidida");
-  const logros = S.logros.slice().sort(byOrden);
+  const fase = (f) => { const a = parse(f.ini), b = parse(f.fin); return t > b ? "hecha" : t >= a ? "hoy" : ""; };
+  const cuando = (e) => e.estado === "pendiente" ? `${fmt(e.inicio)} al ${fmt(e.fin)}` : `a más tardar el ${fmt(e.fin)}`;
   return `
-  <section class="card hero2">
-    <div class="eyebrow">Corte al ${fmtY(iso(t))}</div>
-    <h2>Dónde estamos</h2>
-    <p class="lead2">${esc(sem ? sem.resumen : "")}</p>
+  <section class="card camino">
+    <div class="sec-h" style="margin:0"><h2>Cómo va la implementación</h2><span class="faint">Corte al ${fmtY(iso(t))}</span></div>
+    <ol class="fases5">${FASES5.map((f, i) => `<li class="${fase(f)}"><span class="num">${fase(f) === "hecha" ? "✓" : i + 1}</span><b>${esc(f.n)}</b><span>${esc(f.d)}${fase(f) === "hoy" ? " · estamos aquí" : ""}</span></li>`).join("")}</ol>
+    <div class="tres">
+      <div class="col3 ya"><h3><span class="ic">✓</span>Ya funciona en Odoo</h3><ul>${funciona.map((g) => `<li>${esc(g.texto)}</li>`).join("")}</ul></div>
+      <div class="col3 curso"><h3><span class="ic">●</span>En proceso</h3><ul>${enCurso.map((e) => `<li><b>${esc(e.nombre)}</b><span>${esc(fname(e.frente))} · ${cuando(e)}</span>${e.id === "c-concilia" && conc ? `<span class="mini2"><i style="width:${conc.valor}%"></i></span><span class="mono">${conc.valor}% conciliado</span>` : ""}</li>`).join("")}</ul></div>
+      <div class="col3 sig"><h3><span class="ic">→</span>Lo que sigue</h3><ul>${sigue.map((e) => `<li><b>${esc(e.nombre)}</b><span>${esc(fname(e.frente))} · ${cuando(e)}${e.confirmada ? "" : " · propuesta"}</span></li>`).join("")}</ul></div>
+    </div>
   </section>
 
   <section class="kpis">${S.indicadores.sort(byOrden).map(kpiCard).join("")}</section>
 
   <section>
-    <div class="sec-h"><h2>Qué falta y cuándo</h2><p>Solo fechas acordadas por el equipo. Las punteadas están por confirmar.</p></div>
-    <div class="meses">${meses.map((m) => `<div class="card mes"><h3>${esc(m.n)}</h3><ul>${m.items.map((e) => `<li class="${e.confirmada ? "" : "prop"}"><span class="fdot" style="background:${fcol(e.frente)}"></span><div><b>${esc(e.nombre)}</b><span>${esc(fname(e.frente))} · ${e.estado === "pendiente" ? fmt(e.inicio) + " al " + fmt(e.fin) : "a más tardar el " + fmt(e.fin)}</span></div></li>`).join("")}</ul></div>`).join("")}</div>
-  </section>
-
-  <section>
-    <div class="sec-h"><h2>Frentes</h2><p>${canWrite ? "Toca un frente para cambiar su semáforo." : "Toca un frente para ver sus tareas."}</p></div>
+    <div class="sec-h"><h2>Frentes</h2><p>${canWrite ? "Toca un frente para cambiar su prioridad o su fecha." : "Toca un frente para ver sus tareas."}</p></div>
     <div class="frentes">${fr.map(frenteSimple).join("")}</div>
   </section>
 
-  ${frenos.length || decAb.length ? `<section class="card pad">
-    <h2 style="margin-bottom:10px">Lo que nos puede frenar</h2>
-    <ul class="frenos">${frenos.map((f) => `<li><b>${esc(f.nombre)}:</b> ${esc(f.motivo)}</li>`).join("")}${decAb.map((x) => `<li><b>Por decidir:</b> ${esc(x.texto)}${x.quien ? ` <span class="faint">(${esc(x.quien)})</span>` : ""}</li>`).join("")}</ul>
+  ${decAb.length ? `<section class="card pad">
+    <h2 style="margin-bottom:10px">Pendientes por decidir</h2>
+    <ul class="frenos">${decAb.map((x) => `<li>${esc(x.texto)}${x.quien ? ` <span class="faint">(decide: ${esc(x.quien)})</span>` : ""}</li>`).join("")}</ul>
   </section>` : ""}
 
-  <section>
-    <div class="sec-h"><h2>Lo que ya se logró</h2><p>Lo hecho desde el arranque para llegar aquí.</p></div>
-    <div class="card logros">${logros.map((g) => `<div class="logro"><span class="ok">✓</span><div><b>${esc(g.texto)}</b><span>${esc(g.cuando)}${g.frente ? " · " + esc(fname(g.frente)) : ""}</span></div></div>`).join("")}</div>
-  </section>`;
+  ${historia.length ? `<section>
+    <div class="sec-h"><h2>Cómo llegamos aquí</h2><p>Lo que se hizo desde el arranque.</p></div>
+    <div class="card logros">${historia.map((g) => `<div class="logro"><span class="ok">✓</span><div><b>${esc(g.texto)}</b><span>${esc(g.cuando)}${g.frente ? " · " + esc(fname(g.frente)) : ""}</span></div></div>`).join("")}</div>
+  </section>` : ""}`;
 }
+const prioCls = (f) => (f.prioridad || "").startsWith("Funcionando") ? "pr-ok" : (f.prioridad || "").includes("alta") ? "pr-alta" : "pr-media";
 function frenteSimple(f) {
   return `<button class="frente" data-frente="${esc(f.id)}">
-    <div class="t"><h3><span class="fdot" style="background:${fcol(f.id)}"></span>${esc(f.nombre)}</h3><span class="pill sem-${esc(f.semaforo || "verde")}">${SEM[f.semaforo] || "En tiempo"}</span></div>
+    <div class="t"><h3><span class="fdot" style="background:${fcol(f.id)}"></span>${esc(f.nombre)}</h3><span class="pill ${prioCls(f)}">${esc(f.prioridad || "Prioridad media")}</span></div>
     <div class="listo"><span>Listo</span><b>${esc(f.listo || "Por definir")}</b></div>
     <p class="fmeta">${esc(f.meta || "")}</p>
-    ${f.motivo && f.semaforo !== "verde" ? `<div class="why ${esc(f.semaforo)}">${esc(f.motivo)}</div>` : ""}
+    ${f.motivo ? `<div class="why">${esc(f.motivo)}</div>` : ""}
   </button>`;
 }
 
@@ -572,6 +627,7 @@ function kpiCard(k) {
     <div class="n">${esc(k.nombre)}</div>
     <div class="v">${num(k.valor)}<small>${esc(k.unidad || "")}${k.meta != null ? ` · meta ${num(k.meta)}` : ""}</small></div>
     ${pct != null ? `<div class="bar"><i style="width:${Math.max(3, pct * 100).toFixed(0)}%;background:${color}"></i></div>` : ""}
+    ${k.explica ? `<div class="exp">${esc(k.explica)}</div>` : ""}
     <div class="src"><span>${esc(k.fuente || "")}</span>${d != null && d !== 0 ? `<span class="delta" style="color:${good ? "var(--verde)" : "var(--rojo)"}">${d > 0 ? "+" : ""}${num(d)}</span>` : ""}</div>
   </div>`;
 }
@@ -603,7 +659,7 @@ function vEmpresas() {
   let list = es.filter((e) => !fEmp.estado || e.estado === fEmp.estado);
   const ord = { pendientes: (a, b) => (b.pendientes ?? -1) - (a.pendientes ?? -1), pct: (a, b) => (a.pct ?? 101) - (b.pct ?? 101), nombre: (a, b) => a.nombre.localeCompare(b.nombre), movimientos: (a, b) => (b.movimientos ?? 0) - (a.movimientos ?? 0) }[fEmp.orden];
   list.sort(ord);
-  const col = (p) => p == null ? "var(--faint)" : p >= 75 ? "var(--verde)" : p < 25 ? "var(--rojo)" : "var(--azul)";
+  const col = (p) => p == null ? "var(--faint)" : p >= 75 ? "var(--verde)" : p < 25 ? "var(--ambar)" : "var(--azul)";
   const fuente = es[0] ? es[0].fuente : "";
   const th = (k, n, cls) => `<th class="${cls || ""}"><button data-ord="${k}" class="${fEmp.orden === k ? "on" : ""}">${n}${fEmp.orden === k ? " ↓" : ""}</button></th>`;
   return `<section class="view" style="gap:14px">
@@ -613,11 +669,11 @@ function vEmpresas() {
       <div><b>${num(tot.c)}</b><span>cuentas bancarias</span></div>
       <div><b>${num(tot.m)}</b><span>movimientos</span></div>
       <div><b>${tot.m ? (tot.k / tot.m * 100).toFixed(1) : 0}%</b><span>conciliado (${num(tot.k)})</span></div>
-      <div><b style="color:var(--rojo)">${num(tot.p)}</b><span>por conciliar</span></div>
+      <div><b>${num(tot.p)}</b><span>por conciliar</span></div>
     </div>
     <div class="toolbar"><div class="seg" id="segE">
       <button data-e="" class="${!fEmp.estado ? "on" : ""}">Todas (${es.length})</button>
-      ${["Avanzado", "En proceso", "Crítico", "Sin movimientos"].map((s) => `<button data-e="${s}" class="${fEmp.estado === s ? "on" : ""}">${s} (${cuenta(s)})</button>`).join("")}
+      ${["Avanzado", "En proceso", "Por arrancar", "Sin movimientos"].map((s) => `<button data-e="${s}" class="${fEmp.estado === s ? "on" : ""}">${s} (${cuenta(s)})</button>`).join("")}
     </div></div>
     <div class="card tabla"><table>
       <thead><tr>${th("nombre", "Empresa")}<th class="n">Cuentas</th>${th("movimientos", "Movimientos", "n")}<th class="n">Conciliados</th>${th("pendientes", "Por conciliar", "n")}${th("pct", "Avance")}<th>Estado</th></tr></thead>
@@ -625,44 +681,41 @@ function vEmpresas() {
         <td>${e.pct == null ? `<span class="faint">—</span>` : `<div class="barra"><span class="t"><i style="width:${Math.max(e.pct, 1.5)}%;background:${col(e.pct)}"></i></span><b>${e.pct.toFixed(1)}%</b></div>`}</td>
         <td><span class="pill e-${esc((e.estado || "").split(" ")[0])}">${esc(e.estado)}</span></td></tr>`).join("")}</tbody>
     </table></div>
-    <p class="muted" style="margin:0">Avanzado: 75% o más conciliado. Crítico: menos de 25%. Sin movimientos: la cuenta no tiene movimientos cargados.</p>
+    <p class="muted" style="margin:0">Avanzado: 75% o más conciliado. Por arrancar: menos de 25%. Sin movimientos: la cuenta no tiene movimientos cargados.</p>
   </section>`;
 }
 
 // Plan
+const MESES_PLAN = [
+  { k: "2026-11", n: "Noviembre", fase: "Operación diaria en Odoo" },
+  { k: "2026-12", n: "Diciembre", fase: "Paralelo: Compac principal" },
+  { k: "2027-01", n: "Enero", fase: "Odoo principal" },
+  { k: "2027-02", n: "Febrero", fase: "Primer cierre en Odoo", prop: true },
+  { k: "2027-03", n: "Marzo", fase: "Compac solo consulta", prop: true },
+];
 function vPlan() {
-  const start = monday(parse("2026-10-26")), weeks = 15; const end = addDays(start, weeks * 7);
-  const total = end - start; const t = today();
-  const pos = (d) => ((d - start) / total) * 100;
-  const wk = [...Array(weeks)].map((_, i) => addDays(start, i * 7));
-  const tpos = pos(t);
-  const head = wk.map((d) => { const isNow = t >= d && t < addDays(d, 7); return `<div class="${d.getDate() <= 7 ? "m" : ""}${isNow ? " hoy" : ""}">${d.getDate()} ${MES[d.getMonth()]}</div>`; }).join("");
-  const gridCols = `grid-template-columns:repeat(${weeks},1fr)`;
-  const gl = `<div class="gl" style="${gridCols}">${wk.map(() => "<div></div>").join("")}</div>`;
-  let rows = "";
-  S.frentes.sort(byOrden).forEach((f) => {
-    const es = S.etapas.filter((e) => e.frente === f.id).sort(byOrden);
-    const c = statsFrente(f.id);
-    rows += `<div class="row grp"><div class="lbl"><span class="fdot" style="background:${fcol(f.id)}"></span><span>${esc(f.nombre)}</span><span class="pill sem-${esc(f.semaforo)}" style="margin-left:auto">${c.pct}%</span></div><div class="lane">${gl}${tpos >= 0 && tpos <= 100 ? `<div class="todayline" style="left:${tpos}%"></div>` : ""}</div></div>`;
-    es.forEach((e) => {
-      const a = parse(e.inicio), b = addDays(parse(e.fin), 1);
-      const clip = a < start; const l = Math.max(0, pos(a)), r = Math.min(100, pos(b));
-      const isLate = e.estado !== "hecha" && parse(e.fin) < t;
-      const cls = `${isLate ? "late" : e.estado}${e.confirmada ? "" : " prop"}${clip ? " clip" : ""}`;
-      const bar = b <= start ? `<div class="bar-e ${cls}" style="left:0;width:auto;max-width:100%" title="${esc(e.nombre)}">← ${esc(fmt(e.fin))} · ${esc(e.nombre)}</div>`
-        : `<div class="bar-e ${cls}" style="left:${l}%;width:max(${(r - l).toFixed(2)}%, 14px)" title="${esc(e.nombre)} · ${fmt(e.inicio)} → ${fmt(e.fin)}${e.confirmada ? "" : " (por confirmar)"}">${r - l > 9 ? esc(fmt(e.fin)) : ""}</div>`;
-      rows += `<div class="row"><div class="lbl" ${canWrite ? `data-etapa="${esc(e.id)}" style="cursor:pointer"` : ""}><span class="dot-s" style="margin:0;background:${isLate ? "var(--rojo)" : e.estado === "hecha" ? "var(--verde)" : e.estado === "en_curso" ? "var(--azul)" : "var(--faint)"}"></span><span title="${esc((compDe(e) ? compDe(e) + " · " : "") + e.nombre)}">${compDe(e) ? `<em class="faint" style="font-style:normal">${esc(compDe(e).split(" ")[0])} · </em>` : ""}${esc(e.nombre)}</span></div><div class="lane">${gl}${tpos >= 0 && tpos <= 100 ? `<div class="todayline" style="left:${tpos}%"></div>` : ""}${bar}</div></div>`;
-    });
-  });
-  return `<section>
-    <div class="sec-h"><h2>Plan por frente</h2>
-      <div class="legend"><span><i style="background:var(--verde-soft)"></i>Hecha</span><span><i style="background:var(--azul-soft)"></i>En curso</span><span><i style="background:var(--panel-2);border:1px solid var(--line-2)"></i>Por hacer</span><span><i style="background:var(--rojo-soft)"></i>Vencida</span><span><i style="border:1px dashed var(--muted)"></i>Fecha por confirmar</span><span><i style="background:var(--accent);width:2px"></i>Hoy</span></div>
+  const t = today(); const mesHoy = iso(t).slice(0, 7);
+  const fr = S.frentes.slice().sort(byOrden);
+  const cel = (e) => `<button class="hito ${e.estado}${e.confirmada ? "" : " prop"}" ${canWrite ? `data-etapa="${esc(e.id)}"` : ""} title="${esc(e.fuente || "")}"><b>${esc(e.nombre)}</b><span>${e.estado === "hecha" ? "✓ hecho" : e.estado === "en_curso" ? "en curso · " + fmt(e.fin) : fmt(e.inicio) + " al " + fmt(e.fin)}${e.confirmada ? "" : " · propuesta"}</span></button>`;
+  const mesDe = (e) => { const k = e.fin.slice(0, 7); return k < "2026-11" ? "2026-11" : k > "2027-03" ? "2027-03" : k; };
+  return `<section class="view" style="gap:12px">
+    <div class="sec-h" style="margin:0"><h2>Plan mes por mes</h2>
+      <div class="legend"><span><i style="background:var(--verde-soft)"></i>Hecho</span><span><i style="background:var(--azul-soft)"></i>En curso</span><span><i style="background:var(--panel-2);border:1px solid var(--line-2)"></i>Por hacer</span><span><i style="border:1px dashed var(--muted)"></i>Propuesta, por confirmar</span></div>
     </div>
-    <div class="card gantt"><div class="g">
-      <div class="row head"><div class="lbl"><span class="eyebrow">Frente / etapa</span></div><div class="lane"><div class="weeks" style="${gridCols}">${head}</div></div></div>
-      ${rows}
-    </div></div>
-    <p class="muted" style="margin-top:10px">Las fechas en Odoo y las de la junta del 16-nov están confirmadas; las punteadas son propuestas para acordar con el equipo. ${canWrite ? "Toca el nombre de una etapa para cambiar sus fechas o su estado." : ""}</p>
+    <div class="card mapa"><table>
+      <thead>
+        <tr><th class="fcol">Frente</th><th>Ya funciona</th>${MESES_PLAN.map((m) => `<th class="${m.k === mesHoy ? "hoy" : ""}">${m.n}${m.k === mesHoy ? " · hoy" : ""}</th>`).join("")}</tr>
+        <tr class="fase-row"><td></td><td></td>${MESES_PLAN.map((m) => `<td><span class="fase-b${m.prop ? " prop" : ""}">${esc(m.fase)}${m.prop ? " · propuesta" : ""}</span></td>`).join("")}</tr>
+      </thead>
+      <tbody>${fr.map((f) => {
+        const es = S.etapas.filter((e) => e.frente === f.id);
+        const ya = S.logros.filter((g) => g.funciona && g.frente === f.id);
+        return `<tr><th class="fcol"><span class="fdot" style="background:${fcol(f.id)}"></span>${esc(f.nombre)}<span class="sub">Listo: ${esc(f.listo || "por definir")}</span></th>
+          <td>${ya.map((g) => `<div class="hito hecha"><b>${esc(g.texto)}</b></div>`).join("") || `<span class="faint">—</span>`}</td>
+          ${MESES_PLAN.map((m) => `<td class="${m.k === mesHoy ? "hoy" : ""}">${es.filter((e) => mesDe(e) === m.k).sort((a, b) => a.fin.localeCompare(b.fin)).map(cel).join("")}</td>`).join("")}</tr>`;
+      }).join("")}</tbody>
+    </table></div>
+    <p class="muted" style="margin:0">Cada recuadro es un entregable y está en el mes en que debe quedar. Las propuestas (punteadas) son sugerencias para acordar con el equipo. ${canWrite ? "Toca un recuadro para cambiar su fecha o su estado." : ""}</p>
   </section>`;
 }
 
@@ -763,7 +816,7 @@ function semanaTexto(k) {
   let out = `Implementación de Odoo · Semana ${weekNum(a)} (${fmt(k)} – ${fmtY(iso(addDays(a, 4)))})\n\n`;
   if (s.resumen) out += s.resumen + "\n\n";
   out += `Avance general: ${g.pct}% (${g.hecha} de ${g.total} tareas). Atoradas o vencidas: ${g.atorada + g.late}.\n\n`;
-  out += "Frentes:\n" + S.frentes.sort(byOrden).map((f) => { const c = statsFrente(f.id); return `- ${f.nombre}: ${SEM[f.semaforo] || ""}, ${c.pct}%${f.semaforo !== "verde" && f.motivo ? ". " + f.motivo : ""}`; }).join("\n") + "\n\n";
+  out += "Frentes:\n" + S.frentes.sort(byOrden).map((f) => { const c = statsFrente(f.id); return `- ${f.nombre}: ${f.prioridad || ""}, listo ${f.listo || "por definir"}${f.motivo ? ". " + f.motivo : ""}`; }).join("\n") + "\n\n";
   if ((s.logros || []).length) out += "Logros:\n" + s.logros.map((x) => "- " + x).join("\n") + "\n\n";
   if (hechas.length) out += "Tareas terminadas:\n" + hechas.map((x) => `- ${fname(x.frente)}: ${x.texto}`).join("\n") + "\n\n";
   if ((s.siguiente || []).length) out += "Siguiente semana:\n" + s.siguiente.map((x) => "- " + x).join("\n") + "\n\n";
@@ -943,8 +996,8 @@ function openFrente(fid) {
   const f = frenteDe(fid); if (!f) return;
   if (!canWrite) { filt.frente = fid; location.hash = "tareas"; return; }
   openDrawer(f.nombre, `
-    <div class="fld"><label for="fSem">Semáforo</label><select class="inp" id="fSem">${Object.entries(SEM).map(([k, n]) => `<option value="${k}" ${f.semaforo === k ? "selected" : ""}>${n}</option>`).join("")}</select></div>
-    <div class="fld"><label for="fMot">Qué lo frena o lo pone en riesgo</label><textarea class="inp" id="fMot">${esc(f.motivo)}</textarea></div>
+    <div class="fld"><label for="fSem">Prioridad</label><select class="inp" id="fSem">${["Prioridad alta", "Prioridad media", "Funcionando"].map((n) => `<option ${f.prioridad === n ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+    <div class="fld"><label for="fMot">Qué falta para cerrarlo</label><textarea class="inp" id="fMot">${esc(f.motivo)}</textarea></div>
     <div class="row2"><div class="fld"><label for="fLid">Líder</label><input class="inp" id="fLid" list="dlPersonas" value="${esc(f.lider)}"></div><div class="fld"><label for="fEq">Equipo</label><input class="inp" id="fEq" value="${esc(f.equipo)}"></div></div>
     <div class="fld"><label for="fListo">Listo para</label><input class="inp" id="fListo" value="${esc(f.listo || "")}" placeholder="Ej.: Enero 2027"></div>
     <div class="fld"><label for="fMeta">Meta del frente</label><textarea class="inp" id="fMeta">${esc(f.meta)}</textarea></div>
@@ -953,9 +1006,9 @@ function openFrente(fid) {
   $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
   $("#fVer").onclick = () => { closeDrawer(); filt.frente = fid; location.hash = "tareas"; };
   $("#fSave").onclick = async () => {
-    const patch = { semaforo: $("#fSem").value, motivo: $("#fMot").value.trim(), lider: $("#fLid").value.trim(), equipo: $("#fEq").value.trim(), meta: $("#fMeta").value.trim(), listo: $("#fListo").value.trim() };
+    const patch = { prioridad: $("#fSem").value, motivo: $("#fMot").value.trim(), lider: $("#fLid").value.trim(), equipo: $("#fEq").value.trim(), meta: $("#fMeta").value.trim(), listo: $("#fListo").value.trim() };
     closeDrawer();
-    await write(`frentes/${fid}`, patch, f.semaforo !== patch.semaforo ? `${f.nombre}: semáforo a ${SEM[patch.semaforo]}` : `${f.nombre}: datos del frente`, fid);
+    await write(`frentes/${fid}`, patch, f.prioridad !== patch.prioridad ? `${f.nombre}: ${patch.prioridad}` : `${f.nombre}: datos del frente`, fid);
   };
 }
 
@@ -1299,7 +1352,7 @@ function textoParaClaude() {
   o += "## Indicadores\n" + S.indicadores.sort(byOrden).map((i) => `- ${i.nombre}: ${num(i.valor)}${i.meta != null ? ` (meta ${num(i.meta)})` : ""} · ${i.fuente}`).join("\n") + "\n\n";
   S.frentes.sort(byOrden).forEach((f) => {
     const c = statsFrente(f.id);
-    o += `## ${f.nombre} · ${SEM[f.semaforo] || ""} · ${c.pct}%\nLíder: ${f.lider || "—"}. Meta: ${f.meta || "—"}${f.motivo ? `\nRiesgo: ${f.motivo}` : ""}\n`;
+    o += `## ${f.nombre} · ${f.prioridad || ""} · listo: ${f.listo || "por definir"}\nLíder: ${f.lider || "—"}. Meta: ${f.meta || "—"}${f.motivo ? `\nRiesgo: ${f.motivo}` : ""}\n`;
     o += "Etapas:\n" + S.etapas.filter((e) => e.frente === f.id).sort(byOrden).map((e) => `- ${e.nombre}: ${e.estado}, ${e.inicio} a ${e.fin}${e.confirmada ? "" : " (por confirmar)"}`).join("\n") + "\n";
     const abiertas = S.tareas.filter((x) => x.frente === f.id && x.estado !== "hecha");
     if (abiertas.length) o += "Tareas abiertas:\n" + abiertas.map((x) => `- [${EST[x.estado]}] ${x.texto}${x.responsable ? " · " + x.responsable : ""}${x.fecha ? " · " + x.fecha + (late(x) ? " (vencida)" : "") : ""}${x.motivo ? " · Motivo: " + x.motivo : ""}`).join("\n") + "\n";

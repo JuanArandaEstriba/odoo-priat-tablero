@@ -32,6 +32,7 @@ if (cmd === "importar-llave") {
   const enc = JSON.parse(readFileSync(DATA, "utf8"));
   const pt = await subtle.decrypt({ name: "AES-GCM", iv: Buffer.from(enc.iv, "base64") }, await key(), Buffer.from(enc.ct, "base64"));
   writeFileSync(a1, Buffer.from(pt).toString("utf8"));
+  writeFileSync(a1 + ".base", git("rev-parse", "HEAD:data/tablero.enc.json").trim());
   console.log("Datos descifrados en", a1);
 } else if (cmd === "guardar") {
   const raw = JSON.parse(readFileSync(a1, "utf8"));
@@ -39,6 +40,11 @@ if (cmd === "importar-llave") {
   const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
   const ct = await subtle.encrypt({ name: "AES-GCM", iv }, await key(), Buffer.from(JSON.stringify(raw)));
   git("pull", "-q", "--rebase");
+  const base = existsSync(a1 + ".base") ? readFileSync(a1 + ".base", "utf8").trim() : "";
+  if (base && base !== git("rev-parse", "HEAD:data/tablero.enc.json").trim()) {
+    console.error("Alguien cambió el tablero después de que lo leíste. Vuelve a leer, aplica tus cambios y guarda otra vez.");
+    process.exit(2);
+  }
   writeFileSync(DATA, JSON.stringify({ v: 1, iv: Buffer.from(iv).toString("base64"), ct: Buffer.from(ct).toString("base64") }));
   git("add", "data/tablero.enc.json");
   git("-c", "user.name=Claude (tablero)", "-c", "user.email=tablero-odoo@users.noreply.github.com", "commit", "-q", "-m", `Claude: ${a2 || "cambios en el tablero"}`);

@@ -609,7 +609,7 @@ function vEmpresas() {
     </div></div>
     <div class="card tabla"><table>
       <thead><tr>${th("nombre", "Empresa")}<th class="n">Cuentas</th>${th("movimientos", "Movimientos", "n")}<th class="n">Conciliados</th>${th("pendientes", "Por conciliar", "n")}${th("pct", "Avance")}<th>Estado</th></tr></thead>
-      <tbody>${list.map((e) => `<tr><td class="emp">${esc(e.nombre)}</td><td class="n">${num(e.cuentas)}</td><td class="n">${num(e.movimientos)}</td><td class="n">${num(e.conciliados)}</td><td class="n">${num(e.pendientes)}</td>
+      <tbody>${list.map((e) => `<tr><td class="emp">${esc(e.nombre)}${e.piloto ? ` <span class="chip-c">Piloto</span>` : ""}</td><td class="n">${num(e.cuentas)}</td><td class="n">${num(e.movimientos)}</td><td class="n">${num(e.conciliados)}</td><td class="n">${num(e.pendientes)}</td>
         <td>${e.pct == null ? `<span class="faint">—</span>` : `<div class="barra"><span class="t"><i style="width:${Math.max(e.pct, 1.5)}%;background:${col(e.pct)}"></i></span><b>${e.pct.toFixed(1)}%</b></div>`}</td>
         <td><span class="pill e-${esc((e.estado || "").split(" ")[0])}">${esc(e.estado)}</span></td></tr>`).join("")}</tbody>
     </table></div>

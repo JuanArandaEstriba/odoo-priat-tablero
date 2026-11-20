@@ -318,6 +318,31 @@ button.li:hover { background: var(--panel-2); }
 .e-Crítico { background: var(--rojo-soft); color: var(--rojo); }
 .e-Sin { background: var(--panel-2); color: var(--muted); }
 
+/* Resumen simple */
+.hero2 { padding: 22px; display: grid; gap: 8px; }
+.hero2 h2 { font-size: 24px; }
+.lead2 { margin: 0; font-size: 16.5px; line-height: 1.55; max-width: 75ch; }
+.meses { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; align-items: start; }
+.mes { padding: 16px; display: grid; gap: 10px; }
+.mes h3 { font-family: var(--f-display); font-size: 17px; font-weight: 650; }
+.mes ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.mes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; }
+.mes li .fdot { margin: 6px 0 0; }
+.mes li b { display: block; font-weight: 500; }
+.mes li span { font-size: 12.5px; color: var(--muted); }
+.mes li.prop b { color: var(--muted); }
+.mes li.prop b::after { content: " (por confirmar)"; font-weight: 400; font-size: 12px; }
+.listo { display: flex; gap: 8px; align-items: baseline; }
+.listo span { font-size: 12px; color: var(--muted); }
+.listo b { font-family: var(--f-display); font-size: 18px; font-weight: 650; }
+.fmeta { margin: 0; font-size: 13px; color: var(--muted); text-align: left; }
+.frenos { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.logros { padding: 6px 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.logro { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 10px 16px; border-top: 1px solid var(--line); }
+.logro .ok { width: 20px; height: 20px; border-radius: 50%; background: var(--verde-soft); color: var(--verde); display: grid; place-items: center; font-size: 12px; font-weight: 700; margin-top: 1px; }
+.logro b { display: block; font-weight: 500; }
+.logro span { font-size: 12px; color: var(--muted); }
+
 /* Panel lateral */
 .scrim { position: fixed; inset: 0; background: rgba(15,10,20,.35); z-index: 40; }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100%); background: var(--panel); z-index: 41; box-shadow: var(--sombra); display: grid; grid-template-rows: auto 1fr auto; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
@@ -386,7 +411,7 @@ button.li:hover { background: var(--panel-2); }
 (() => {
 "use strict";
 // ---------- Estado ----------
-const S = { frentes: [], etapas: [], tareas: [], indicadores: [], procesos: [], decisiones: [], semanas: [], actividad: [], personas: [], notas: [], empresas: [] };
+const S = { frentes: [], etapas: [], tareas: [], indicadores: [], procesos: [], decisiones: [], semanas: [], actividad: [], personas: [], notas: [], empresas: [], logros: [] };
 const COLS = Object.keys(S);
 let loaded = new Set(), canWrite = false, meId = null;
 let view = "resumen", filt = { frente: "todos", comp: "", resp: "", q: "", verHechas: false }, fEmp = { estado: "", orden: "pendientes" };
@@ -481,64 +506,51 @@ function gaugeSVG(p) {
 }
 
 function vResumen() {
-  const g = statsGlobal();
-  const t = today(); const goLive = parse("2027-01-04"); const dias = Math.max(0, Math.round((goLive - t) / 864e5));
-  const w0 = monday(t);
-  const hechasSemana = S.tareas.filter((x) => x.hecha_at && new Date(x.hecha_at) >= w0).sort((a, b) => b.hecha_at.localeCompare(a.hecha_at));
-  const atoradas = S.tareas.filter((x) => x.estado === "atorada" || late(x)).sort((a, b) => (a.estado === "atorada" ? -1 : 1) - (b.estado === "atorada" ? -1 : 1) || (a.fecha || "").localeCompare(b.fecha || ""));
-  const lim = addDays(t, 21);
-  const proximos = S.etapas.filter((e) => e.estado !== "hecha" && parse(e.fin) >= t && parse(e.fin) <= lim).sort((a, b) => a.fin.localeCompare(b.fin));
-  const proxT = S.tareas.filter((x) => x.estado !== "hecha" && x.fecha && parse(x.fecha) >= t && parse(x.fecha) <= lim);
-  const decAb = S.decisiones.filter((d) => d.estado !== "decidida").length;
-
+  const t = today();
+  const sem = S.semanas.slice().sort((a, b) => b.id.localeCompare(a.id)).find((s) => s.resumen);
+  const fr = S.frentes.slice().sort(byOrden);
+  const pend = S.etapas.filter((e) => e.estado !== "hecha").sort((a, b) => a.fin.localeCompare(b.fin));
+  const meses = [];
+  pend.forEach((e) => { const d = parse(e.fin); const k = `${d.getFullYear()}-${d.getMonth()}`; let m = meses.find((x) => x.k === k); if (!m) { m = { k, n: `${["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][d.getMonth()]} ${d.getFullYear()}`, items: [] }; meses.push(m); } m.items.push(e); });
+  const frenos = fr.filter((f) => f.semaforo !== "verde" && f.motivo);
+  const decAb = S.decisiones.filter((x) => x.estado !== "decidida");
+  const logros = S.logros.slice().sort(byOrden);
   return `
-  <section class="hero">
-    <div class="card lead">
-      <div class="eyebrow">Hoy · ${fmtY(iso(t))} · semana ${weekNum(t)}</div>
-      <h2>Contabilidad de las 45 razones sociales en Odoo, con Compac solo de respaldo, en enero de 2027.</h2>
-      <div class="gauge">${gaugeSVG(g.pct)}<div><div class="big mono">${g.pct}%</div><div class="muted">${num(g.hecha)} de ${num(g.total)} tareas terminadas</div></div></div>
-    </div>
-    <div class="stats">
-      <div class="stat"><b class="mono">${dias}</b><span>días para Odoo principal (meta 4 ene)</span></div>
-      <div class="stat"><b class="mono">${g.semana}</b><span>tareas terminadas esta semana</span></div>
-      <div class="stat ${g.atorada + g.late ? "alerta" : ""}"><b class="mono">${g.atorada + g.late}</b><span>atoradas o vencidas</span></div>
-      <div class="stat"><b class="mono">${decAb}</b><span>decisiones pendientes</span></div>
-    </div>
+  <section class="card hero2">
+    <div class="eyebrow">Corte al ${fmtY(iso(t))}</div>
+    <h2>Dónde estamos</h2>
+    <p class="lead2">${esc(sem ? sem.resumen : "")}</p>
+  </section>
+
+  <section class="kpis">${S.indicadores.sort(byOrden).map(kpiCard).join("")}</section>
+
+  <section>
+    <div class="sec-h"><h2>Qué falta y cuándo</h2><p>Solo fechas acordadas por el equipo. Las punteadas están por confirmar.</p></div>
+    <div class="meses">${meses.map((m) => `<div class="card mes"><h3>${esc(m.n)}</h3><ul>${m.items.map((e) => `<li class="${e.confirmada ? "" : "prop"}"><span class="fdot" style="background:${fcol(e.frente)}"></span><div><b>${esc(e.nombre)}</b><span>${esc(fname(e.frente))} · ${e.estado === "pendiente" ? fmt(e.inicio) + " al " + fmt(e.fin) : "a más tardar el " + fmt(e.fin)}</span></div></li>`).join("")}</ul></div>`).join("")}</div>
   </section>
 
   <section>
-    <div class="sec-h"><h2>Indicadores</h2><p>De Odoo y del correo de dirección. ${canWrite ? "Toca ✎ para registrar un valor nuevo." : ""}</p></div>
-    <div class="kpis">${S.indicadores.sort(byOrden).map(kpiCard).join("")}</div>
+    <div class="sec-h"><h2>Frentes</h2><p>${canWrite ? "Toca un frente para cambiar su semáforo." : "Toca un frente para ver sus tareas."}</p></div>
+    <div class="frentes">${fr.map(frenteSimple).join("")}</div>
   </section>
+
+  ${frenos.length || decAb.length ? `<section class="card pad">
+    <h2 style="margin-bottom:10px">Lo que nos puede frenar</h2>
+    <ul class="frenos">${frenos.map((f) => `<li><b>${esc(f.nombre)}:</b> ${esc(f.motivo)}</li>`).join("")}${decAb.map((x) => `<li><b>Por decidir:</b> ${esc(x.texto)}${x.quien ? ` <span class="faint">(${esc(x.quien)})</span>` : ""}</li>`).join("")}</ul>
+  </section>` : ""}
 
   <section>
-    <div class="sec-h"><h2>Frentes</h2><p>Toca un frente para ver sus tareas.</p></div>
-    <div class="frentes">${S.frentes.sort(byOrden).map(frenteCard).join("")}</div>
-  </section>
-
-  <section class="cols">
-    <div class="card">
-      <div class="pad sec-h" style="margin:0"><h3>Terminado esta semana</h3><span class="mono faint">${hechasSemana.length}</span></div>
-      <div class="list">${hechasSemana.length ? hechasSemana.slice(0, 12).map((x) => liTask(x, fmt(x.hecha_at))).join("") : `<div class="empty">Aún no se termina nada esta semana.</div>`}</div>
-    </div>
-    <div class="card">
-      <div class="pad sec-h" style="margin:0"><h3>Atorado y por qué</h3><span class="mono faint">${atoradas.length}</span></div>
-      <div class="list">${atoradas.length ? atoradas.slice(0, 12).map((x) => liTask(x, x.fecha ? fmt(x.fecha) : "", true)).join("") : `<div class="empty">Nada atorado.</div>`}</div>
-    </div>
-    <div class="card">
-      <div class="pad sec-h" style="margin:0"><h3>Próximos compromisos (3 semanas)</h3><span class="mono faint">${proximos.length + proxT.length}</span></div>
-      <div class="list">
-        ${proximos.map((e) => `<button class="li" data-frente="${esc(e.frente)}"><span class="dot-s" style="background:var(--accent)"></span><span class="tx"><b>${esc(e.nombre)}</b><span>${esc(fname(e.frente))} · etapa${e.confirmada ? "" : " · fecha por confirmar"}</span></span><span class="dt">${fmt(e.fin)}</span></button>`).join("")}
-        ${proxT.map((x) => liTask(x, fmt(x.fecha))).join("")}
-        ${!proximos.length && !proxT.length ? `<div class="empty">Sin compromisos con fecha en las próximas 3 semanas.</div>` : ""}
-      </div>
-    </div>
-  </section>
-
-  <section class="card feed">
-    <div class="pad sec-h" style="margin:0"><h3>Movimientos recientes</h3><span class="faint">quién movió qué</span></div>
-    <div class="list">${S.actividad.length ? S.actividad.sort((a, b) => (b.at || "").localeCompare(a.at || "")).slice(0, 10).map((a) => `<div class="li">${avatar(a.por)}<span class="tx"><b>${esc(a.texto)}</b><span>${esc(who(a.por))} · ${ago(a.at)}${a.frente ? " · " + esc(fname(a.frente)) : ""}</span></span></div>`).join("") : `<div class="empty">Aquí aparecerá cada cambio que haga el equipo.</div>`}</div>
+    <div class="sec-h"><h2>Lo que ya se logró</h2><p>Lo hecho desde el arranque para llegar aquí.</p></div>
+    <div class="card logros">${logros.map((g) => `<div class="logro"><span class="ok">✓</span><div><b>${esc(g.texto)}</b><span>${esc(g.cuando)}${g.frente ? " · " + esc(fname(g.frente)) : ""}</span></div></div>`).join("")}</div>
   </section>`;
+}
+function frenteSimple(f) {
+  return `<button class="frente" data-frente="${esc(f.id)}">
+    <div class="t"><h3><span class="fdot" style="background:${fcol(f.id)}"></span>${esc(f.nombre)}</h3><span class="pill sem-${esc(f.semaforo || "verde")}">${SEM[f.semaforo] || "En tiempo"}</span></div>
+    <div class="listo"><span>Listo</span><b>${esc(f.listo || "Por definir")}</b></div>
+    <p class="fmeta">${esc(f.meta || "")}</p>
+    ${f.motivo && f.semaforo !== "verde" ? `<div class="why ${esc(f.semaforo)}">${esc(f.motivo)}</div>` : ""}
+  </button>`;
 }
 
 function who(id) { if (!id) return "Carga inicial"; if (id === "claude") return "Claude"; const e = EDITORES.find((x) => x.id === id); return e ? e.nombre : (names[id] || "Alguien del equipo"); }
@@ -934,13 +946,14 @@ function openFrente(fid) {
     <div class="fld"><label for="fSem">Semáforo</label><select class="inp" id="fSem">${Object.entries(SEM).map(([k, n]) => `<option value="${k}" ${f.semaforo === k ? "selected" : ""}>${n}</option>`).join("")}</select></div>
     <div class="fld"><label for="fMot">Qué lo frena o lo pone en riesgo</label><textarea class="inp" id="fMot">${esc(f.motivo)}</textarea></div>
     <div class="row2"><div class="fld"><label for="fLid">Líder</label><input class="inp" id="fLid" list="dlPersonas" value="${esc(f.lider)}"></div><div class="fld"><label for="fEq">Equipo</label><input class="inp" id="fEq" value="${esc(f.equipo)}"></div></div>
+    <div class="fld"><label for="fListo">Listo para</label><input class="inp" id="fListo" value="${esc(f.listo || "")}" placeholder="Ej.: Enero 2027"></div>
     <div class="fld"><label for="fMeta">Meta del frente</label><textarea class="inp" id="fMeta">${esc(f.meta)}</textarea></div>
     ${personasDL()}`,
     `<button class="btn" id="fVer">Ver tareas</button><span style="display:flex;gap:8px"><button class="btn" data-close-d>Cancelar</button><button class="btn pri" id="fSave">Guardar</button></span>`);
   $("#layer").querySelectorAll("[data-close-d]").forEach((el) => el.onclick = closeDrawer);
   $("#fVer").onclick = () => { closeDrawer(); filt.frente = fid; location.hash = "tareas"; };
   $("#fSave").onclick = async () => {
-    const patch = { semaforo: $("#fSem").value, motivo: $("#fMot").value.trim(), lider: $("#fLid").value.trim(), equipo: $("#fEq").value.trim(), meta: $("#fMeta").value.trim() };
+    const patch = { semaforo: $("#fSem").value, motivo: $("#fMot").value.trim(), lider: $("#fLid").value.trim(), equipo: $("#fEq").value.trim(), meta: $("#fMeta").value.trim(), listo: $("#fListo").value.trim() };
     closeDrawer();
     await write(`frentes/${fid}`, patch, f.semaforo !== patch.semaforo ? `${f.nombre}: semáforo a ${SEM[patch.semaforo]}` : `${f.nombre}: datos del frente`, fid);
   };
